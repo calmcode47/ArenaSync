@@ -1,0 +1,45 @@
+type Event @table {
+  name: String!
+  date: Date!
+  location: String!
+  description: String
+  venueCapacity: Int
+}
+
+type Zone @table {
+  event: Event!
+  name: String!
+  type: String!
+  criticalCapacity: Int!
+  description: String
+  coordinates: String
+}
+
+type TelemetryData @table {
+  zone: Zone!
+  timestamp: Timestamp!
+  dataType: String!
+  value: Float!
+  source: String
+}
+
+type Prediction @table {
+  zone: Zone!
+  timestamp: Timestamp!
+  predictionTime: Timestamp!
+  metric: String!
+  predictedValue: Float!
+  lowerConfidenceBound: Float
+  upperConfidenceBound: Float
+  forecastHorizon: String
+}
+
+type Alert @table {
+  zone: Zone!
+  prediction: Prediction
+  timestamp: Timestamp!
+  alertType: String!
+  message: String!
+  status: String!
+  dispatchedInstruction: String
+}
