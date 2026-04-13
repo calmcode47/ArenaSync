@@ -1,11 +1,20 @@
 import orjson
+import logging
 from upstash_redis.asyncio import Redis
 from app.core.config import settings
 from typing import Any, Optional
 
-redis = Redis(url=settings.UPSTASH_REDIS_REST_URL, token=settings.UPSTASH_REDIS_REST_TOKEN)
+logger = logging.getLogger(__name__)
+
+redis = None
+if getattr(settings, "UPSTASH_REDIS_REST_URL", None):
+    redis = Redis(url=settings.UPSTASH_REDIS_REST_URL, token=settings.UPSTASH_REDIS_REST_TOKEN)
+else:
+    logger.warning("Redis not configured — caching disabled")
 
 async def get_cached(key: str) -> Optional[Any]:
+    if not redis:
+        return None
     data = await redis.get(key)
     if not data:
         return None
@@ -15,12 +24,18 @@ async def get_cached(key: str) -> Optional[Any]:
         return data
 
 async def set_cached(key: str, value: Any, ttl_seconds: int = 300) -> None:
+    if not redis:
+        return
     serialized = orjson.dumps(value).decode("utf-8")
     await redis.set(key, serialized, ex=ttl_seconds)
 
 async def invalidate(key: str) -> None:
+    if not redis:
+        return
     await redis.delete(key)
 
 async def publish_event(channel: str, payload: dict) -> None:
+    if not redis:
+        return
     serialized = orjson.dumps(payload).decode("utf-8")
     await redis.publish(channel, serialized)

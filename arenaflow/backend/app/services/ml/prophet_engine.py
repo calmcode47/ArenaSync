@@ -1,15 +1,13 @@
 """
 Prophet-based queue wait time forecasting engine.
-Input: Historical queue_length time-series DataFrame with columns [ds, y]
-  where ds = datetime, y = queue_length
-Output: Forecast dict with estimated_wait_minutes and 30-min future predictions.
 """
 
 import pandas as pd
 from prophet import Prophet
 from typing import Optional, Dict, Any
 import logging
-from datetime import datetime
+import time
+from datetime import datetime, timezone, timedelta
 
 class ProphetEngine:
     """Manages Prophet model lifecycle per zone."""
@@ -27,7 +25,6 @@ class ProphetEngine:
             yearly_seasonality=False,
             changepoint_prior_scale=0.05
         )
-        # Add custom "event_day" seasonality (assumes periods of ~1 day length variations)
         model.add_seasonality(name="event_day", period=1, fourier_order=5)
         return model
 
@@ -52,7 +49,6 @@ class ProphetEngine:
         future = model.make_future_dataframe(periods=periods, freq=freq, include_history=False)
         forecast_df = model.predict(future)
         
-        # Ensure 'yhat' is non-negative
         forecast_df['yhat'] = forecast_df['yhat'].clip(lower=0)
         forecast_df['yhat_lower'] = forecast_df['yhat_lower'].clip(lower=0)
         forecast_df['yhat_upper'] = forecast_df['yhat_upper'].clip(lower=0)
@@ -62,7 +58,6 @@ class ProphetEngine:
         lower_bound = float(next_pred['yhat_lower'])
         upper_bound = float(next_pred['yhat_upper'])
         
-        # Simple confidence pseudo-heuristic derived from interval relative to mean
         interval_width = upper_bound - lower_bound
         confidence = 1.0 - min((interval_width / (estimated_wait + 1e-5)), 1.0)
         
@@ -88,8 +83,53 @@ class ProphetEngine:
         return self.predict(zone_id, periods=periods)
 
     def estimate_wait_from_queue(self, queue_length: int, service_rate: float) -> float:
-        # Fallback formula using Little's Law variation
         if service_rate <= 0:
-            return float(queue_length) * 5.0 # default penalty assumption
+            return float(queue_length) * 5.0 
         wait_time = queue_length / service_rate
         return max(0.0, float(wait_time))
+
+    async def warmup_all_zones(self, db_session, venue_id: str) -> dict:
+        """
+        Called once on FastAPI startup for the demo venue.
+        Fetches last 7 days of queue entries per zone and fits Prophet models.
+        """
+        from sqlalchemy import select
+        from app.models.zone import Zone
+        from app.models.queue_entry import QueueEntry
+
+        start_time = time.time()
+        stmt = select(Zone).where(Zone.venue_id == venue_id)
+        zones_res = await db_session.execute(stmt)
+        zones = zones_res.scalars().all()
+        
+        fitted = 0
+        fallback = 0
+        seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+        
+        for zone in zones:
+            q_stmt = select(QueueEntry).where(
+                QueueEntry.zone_id == zone.id,
+                QueueEntry.recorded_at > seven_days_ago
+            ).order_by(QueueEntry.recorded_at.asc())
+            q_res = await db_session.execute(q_stmt)
+            entries = q_res.scalars().all()
+            
+            if len(entries) >= 10:
+                data = [{"ds": e.recorded_at, "y": e.queue_length} for e in entries]
+                df = pd.DataFrame(data)
+                df['ds'] = df['ds'].dt.tz_localize(None) 
+                
+                try:
+                    self.fit(str(zone.id), df)
+                    fitted += 1
+                except Exception as e:
+                    self.logger.warning(f"Failed to fit model for zone {zone.id}: {e}")
+                    fallback += 1
+            else:
+                fallback += 1
+                
+        duration = time.time() - start_time
+        self.logger.info(f"Prophet warmup: {fitted} zones trained, {fallback} fallback")
+        return {"fitted": fitted, "fallback": fallback, "duration_seconds": round(duration, 2)}
+
+prophet_engine = ProphetEngine()

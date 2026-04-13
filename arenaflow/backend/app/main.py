@@ -1,6 +1,10 @@
 from contextlib import asynccontextmanager
 from typing import Dict
 import uuid
+import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,6 +16,7 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import settings
+from app.services.ml.prophet_engine import prophet_engine
 from app.core.dependencies import limiter
 from app.db.init_db import init_db
 from app.db.session import engine
@@ -36,6 +41,20 @@ async def lifespan(app: FastAPI):
     # Init Firebase singleton
     from app.core.firebase import firebase_client
     _ = firebase_client
+    
+    # Prophet warmup — run in background, do not block startup
+    async def _warmup():
+        try:
+            from app.db.session import AsyncSessionLocal
+            async with AsyncSessionLocal() as db:
+                demo_venue_id = settings.DEMO_VENUE_ID  # Optional env var
+                if demo_venue_id:
+                    result = await prophet_engine.warmup_all_zones(db, demo_venue_id)
+                    logger.info(f"Prophet warmup complete: {result}")
+        except Exception as e:
+            logger.warning(f"Prophet warmup failed (non-critical): {e}")
+
+    asyncio.create_task(_warmup())
     
     yield
     
@@ -86,10 +105,11 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
 # Placeholders for future routers
 # from app.api.v1 import routes as v1_routes
-from app.api.v1.routes import virtual_queue
+from app.api.v1.routes import virtual_queue, ml
 # from app.websocket import manager as ws_manager
 # app.include_router(v1_routes.router, prefix="/api/v1")
 app.include_router(virtual_queue.router, prefix="/api/v1/vqueue", tags=["Virtual Queue"])
+app.include_router(ml.router, prefix="/api/v1/ml", tags=["Machine Learning"])
 # app.include_router(ws_manager.router, prefix="/ws")
 
 @app.get("/health", tags=["health"])

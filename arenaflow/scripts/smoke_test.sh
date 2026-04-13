@@ -58,6 +58,24 @@ else
 fi
 
 echo ""
+echo "[ PRODUCTION VERIFICATION ]"
+echo "Run with production URLs:"
+echo "  bash scripts/smoke_test.sh https://your-app.up.railway.app https://arenaflow.vercel.app"
+echo ""
+echo "[ CORS CHECK ]"
+CORS_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+  -H "Origin: ${FRONTEND}" \
+  -H "Access-Control-Request-Method: GET" \
+  -X OPTIONS "${BACKEND}/health")
+if [ "$CORS_STATUS" = "200" ] || [ "$CORS_STATUS" = "204" ]; then
+  echo "  ✅ CORS preflight → HTTP $CORS_STATUS"
+  PASS=$((PASS+1))
+else
+  echo "  ❌ CORS preflight failed → HTTP $CORS_STATUS"
+  FAIL=$((FAIL+1))
+fi
+
+echo ""
 echo "════════════════════════════════════════"
 echo "  Results: $PASS passed · $FAIL failed"
 echo "════════════════════════════════════════"

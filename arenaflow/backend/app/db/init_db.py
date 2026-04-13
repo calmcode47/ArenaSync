@@ -1,4 +1,5 @@
 import logging
+import uuid
 from sqlalchemy import text
 from app.db.session import engine, Base
 from app.core.config import settings
@@ -15,20 +16,29 @@ async def init_db() -> None:
     try:
         async with engine.begin() as conn:
             result = await conn.execute(
-                text("SELECT count(id) FROM users WHERE email = :email"),
-                {"email": settings.ADMIN_EMAIL}
+                text("SELECT count(*) FROM users WHERE role = 'admin'")
             )
             count = result.scalar()
             
             if count == 0:
-                hashed_pwd = get_password_hash(settings.ADMIN_PASSWORD)
-                await conn.execute(
-                    text("""
-                    INSERT INTO users (email, hashed_password, is_active, is_superuser)
-                    VALUES (:email, :password, true, true)
-                    """),
-                    {"email": settings.ADMIN_EMAIL, "password": hashed_pwd}
-                )
-                logger.info(f"Created default admin user: {settings.ADMIN_EMAIL}")
+                if settings.ADMIN_EMAIL and settings.ADMIN_PASSWORD:
+                    hashed_pwd = get_password_hash(settings.ADMIN_PASSWORD)
+                    new_id = str(uuid.uuid4())
+                    await conn.execute(
+                        text("""
+                        INSERT INTO users (id, email, hashed_password, role, is_active)
+                        VALUES (:id, :email, :password, 'admin', true)
+                        """),
+                        {"id": new_id, "email": settings.ADMIN_EMAIL, "password": hashed_pwd}
+                    )
+                    logger.info(f"Admin user seeded: {settings.ADMIN_EMAIL}")
+                else:
+                    logger.warning("Admin email or password missing in environment — skipping seed.")
+            else:
+                logger.info("Admin user already exists — skipping seed")
     except Exception as e:
         logger.warning(f"Could not seed admin user. Tables might not exist yet: {e}")
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(init_db())

@@ -1,0 +1,93 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'arenaflow/backend/requirements.txt'
+      - run: pip install ruff black mypy
+      - run: cd arenaflow/backend && pip install -r requirements.txt --quiet
+      - run: cd arenaflow/backend && ruff check app/
+      - run: cd arenaflow/backend && black --check app/
+      - run: cd arenaflow/backend && mypy app/
+
+  backend-tests:
+    needs: [backend-quality]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: arenaflow_test
+        ports:
+          - "5432:5432"
+        options: --health-cmd "pg_isready -U test" --health-interval 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/arenaflow_test?prepared_statement_cache_size=0
+      DATABASE_MIGRATION_URL: postgresql+psycopg2://test:test@localhost:5432/arenaflow_test
+      SECRET_KEY: ci_test_secret_key_32_chars_min_x
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+      APP_ENV: test
+      UPSTASH_REDIS_REST_URL: ""
+      UPSTASH_REDIS_REST_TOKEN: ""
+      FIREBASE_PROJECT_ID: ""
+      ALLOWED_ORIGINS: "http://localhost:5173"
+      GOOGLE_MAPS_API_KEY: ""
+      GOOGLE_TRANSLATE_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: cd arenaflow/backend && pip install -r requirements.txt --quiet
+      - run: cd arenaflow/backend && python -m alembic upgrade head
+      - run: cd arenaflow/backend && pytest tests/ -v --tb=short --asyncio-mode=auto -m "not integration"
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: arenaflow/frontend/package-lock.json
+      - run: cd arenaflow/frontend && npm ci
+      - run: cd arenaflow/frontend && npx tsc --noEmit
+      - run: cd arenaflow/frontend && npm run build
+      - run: cd arenaflow/frontend && echo "Build size:" && du -sh dist
+
+  repo-size-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - run: |
+          SIZE=$(find . -not -path './.git/*' -not -path '*/node_modules/*' -not -path '*/dist/*' -not -path '*/__pycache__/*' -not -path '*/.venv/*' -not -name '*.pyc' -type f | xargs du -cb 2>/dev/null | tail -1 | awk '{print $1}')
+          echo "Source size: ${SIZE} bytes"
+          if [ "$SIZE" -gt 1048576 ]; then
+            echo "FAIL: Source size exceeds 1MB hackathon limit"
+            exit 1
+          fi
+          echo "PASS: Source size $(( SIZE / 1024 ))KB"
