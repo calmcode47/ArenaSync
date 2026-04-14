@@ -105,13 +105,10 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
 # Placeholders for future routers
 # from app.api.v1 import routes as v1_routes
-from app.api.v1.routes import virtual_queue, ml
+from app.api.v1.routes import virtual_queue, ml, health
 # from app.websocket import manager as ws_manager
 # app.include_router(v1_routes.router, prefix="/api/v1")
 app.include_router(virtual_queue.router, prefix="/api/v1/vqueue", tags=["Virtual Queue"])
 app.include_router(ml.router, prefix="/api/v1/ml", tags=["Machine Learning"])
+app.include_router(health.router, prefix="/health", tags=["Health"])
 # app.include_router(ws_manager.router, prefix="/ws")
-
-@app.get("/health", tags=["health"])
-async def health_check() -> Dict[str, str]:
-    return {"status": "ok", "env": settings.APP_ENV}

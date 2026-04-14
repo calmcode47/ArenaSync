@@ -8,16 +8,45 @@ By unifying 3D spatial modeling, predictive Machine Learning (Prophet), and mult
 
 ---
 
-## 🏛️ Architecture Overview
-```text
-[ Client Application (React/Three.js) ]
-       |                  | (WebSocket)
-       v                  v
-[ FastAPI Core Backend & WebSockets ]  <--- [ Prophet ML Worker (Queue/Wait Prediction) ]
-    /          |             \
-   v           v              v
-[PostgreSQL] [Upstash Redis] [Firebase Admin SDK]
+## 🏗️ Production Architecture
+
 ```
+┌─────────────────────────────────────────────────────────┐
+│                    CLIENT BROWSER                        │
+└──────────────────────┬──────────────────────────────────┘
+                       │ HTTPS
+          ┌────────────▼────────────┐
+          │   Firebase Hosting      │  https://[project].web.app
+          │   React 18 + Vite SPA   │  (or Vercel)
+          └────────────┬────────────┘
+                       │ HTTPS REST + WSS WebSocket
+          ┌────────────▼────────────┐
+          │   Google Cloud Run      │  https://[service].run.app
+          │   FastAPI + Uvicorn     │  Auto-scales 0→3 instances
+          └──┬─────────┬────────────┘
+             │         │
+    ┌────────▼──┐  ┌───▼──────────┐
+    │ Supabase  │  │ Upstash Redis│
+    │ PostgreSQL│  │ Cache + Pub  │
+    │ (primary) │  │ Sub (HTTP)   │
+    └───────────┘  └──────────────┘
+             │
+    ┌────────▼──────────┐
+    │ Firebase Admin SDK │
+    │ Auth + FCM Push    │
+    └────────────────────┘
+```
+
+### Service URLs
+| Service | URL | Purpose |
+|---|---|---|
+| Frontend | `https://[project].web.app` | React SPA |
+| Backend | `https://[service].run.app` | FastAPI REST + WS |
+| Database | Supabase | PostgreSQL 15 |
+| Cache | Upstash | Redis (serverless) |
+| Auth/Push | Firebase | Auth + FCM |
+
+---
 
 ---
 

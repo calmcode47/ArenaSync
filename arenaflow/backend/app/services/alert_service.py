@@ -6,9 +6,11 @@ from sqlalchemy import select, desc
 from fastapi import HTTPException
 
 from app.models.alert import Alert
+from app.models.user import User
 from app.schemas.alert import AlertCreate, AlertOut, AlertBroadcast
 from app.services.translate_service import TranslateService
 from app.core.redis_client import publish_event
+from app.core.firebase import send_fcm_notification
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +40,34 @@ class AlertService:
             created_at=datetime.now(timezone.utc)
         )
 
-        if data.severity in ["high", "critical"]:
-            try:
-                # We simulate sending FCM notification to topic or user
-                alert.fcm_sent = True
-            except Exception as e:
-                logger.error(f"FCM notification failed: {e}")
-
+        # Pre-add to get ID if needed, but we can do it after flush
         self.db.add(alert)
+        await self.db.flush()
+
+        # Send FCM if severity is high or critical
+        if data.severity in ("high", "critical"):
+            staff_tokens = await self._get_staff_fcm_tokens(data.venue_id)
+            if staff_tokens:
+                sent_count = 0
+                for token in staff_tokens:
+                    success = await send_fcm_notification(
+                        fcm_token=token,
+                        title=f"[{data.severity.upper()}] {data.title}",
+                        body=data.message[:100],
+                        data={
+                            "alert_id": str(alert.id),
+                            "venue_id": str(data.venue_id),
+                            "severity": data.severity,
+                            "alert_type": data.alert_type,
+                        }
+                    )
+                    if success:
+                        sent_count += 1
+                
+                if sent_count > 0:
+                    alert.fcm_sent = True
+                    # No need to commit here, we commit at the end
+
         await self.db.commit()
         await self.db.refresh(alert)
 
@@ -62,6 +84,16 @@ class AlertService:
         
         await publish_event(f"alerts:{str(data.venue_id)}", broadcast_data.model_dump(mode="json"))
         return out
+
+    async def _get_staff_fcm_tokens(self, venue_id: UUID) -> list[str]:
+        """Fetch non-null FCM tokens for all active staff and admin users."""
+        result = await self.db.execute(
+            select(User.fcm_token)
+            .where(User.role.in_(["staff", "admin"]))
+            .where(User.fcm_token.isnot(None))
+            .where(User.is_active == True)
+        )
+        return [row[0] for row in result.fetchall()]
 
     async def resolve_alert(self, alert_id: UUID) -> AlertOut:
         alert = await self.db.get(Alert, alert_id)

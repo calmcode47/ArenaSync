@@ -43,26 +43,31 @@ async def verify_token_ws(token: str, db: AsyncSession):
         
     return None
 
+ALLOWED_WS_ORIGINS = [
+    origin.strip()
+    for origin in settings.ALLOWED_ORIGINS
+]
+
 @router.websocket("/{venue_id}")
 async def websocket_endpoint(
     websocket: WebSocket,
     venue_id: str,
-    token: str = Query(None),
+    token: str = Query(...),
     db: AsyncSession = Depends(get_db)
 ):
-    # 1. Authenticate
-    if not token:
-        await websocket.close(code=1008, reason="Token required")
+    # Validate origin header
+    origin = websocket.headers.get("origin", "")
+    if origin and origin not in ALLOWED_WS_ORIGINS and settings.APP_ENV == "production":
+        await websocket.close(code=4003)
+        logger.warning(f"WebSocket rejected from unauthorized origin: {origin}")
         return
-        
-    # We skip strict WS token verification for development if needed, 
-    # but the prompt requires implementing it properly. 
-    # For now we'll allow connection if token exists but couldn't attach a full user 
-    # to avoid disconnecting the entire system if auth is mocked in development.
-    # user = await verify_token_ws(token, db)
-    # if not user:
-    #     await websocket.close(code=4001, reason="Invalid token")
-    #     return
+
+    # Validate JWT token
+    from app.core.security import decode_access_token
+    payload = decode_access_token(token)
+    if not payload:
+        await websocket.close(code=4001)
+        return
 
     # 2. Subscribe
     await manager.connect(websocket, venue_id)

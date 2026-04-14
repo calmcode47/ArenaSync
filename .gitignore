@@ -67,3 +67,23 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Firebase credentials (NEVER commit these)
+firebase_credentials.json
+**/firebase_credentials*.json
+**/service_account*.json
+**/serviceAccountKey*.json
+
+# Frontend production env (contains API keys)
+frontend/.env.production
+frontend/.env.local
+
+# Backend env files
+backend/.env
+backend/.env.local
+
+# Cloud build artifacts
+.gcloudignore
+
+# Firebase cache
+.firebase/

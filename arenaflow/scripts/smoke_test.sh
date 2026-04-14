@@ -80,4 +80,40 @@ echo "════════════════════════�
 echo "  Results: $PASS passed · $FAIL failed"
 echo "════════════════════════════════════════"
 
+echo ""
+echo "[ CLOUD RUN CHECKS ]"
+
+# Check Cloud Run URL format
+if echo "$BACKEND" | grep -q "run.app"; then
+  echo "  ℹ️  Cloud Run deployment detected"
+
+  # Check detailed health (requires admin token — skip in CI)
+  DETAILED=$(curl -s "${BACKEND}/health/detailed" 2>/dev/null)
+  if echo "$DETAILED" | grep -q '"database"'; then
+    DB_STATUS=$(echo "$DETAILED" | python3 -c \
+      "import sys,json; d=json.load(sys.stdin); print(d['services']['database']['status'])" \
+      2>/dev/null || echo "unknown")
+    echo "  Database: $DB_STATUS"
+
+    REDIS_STATUS=$(echo "$DETAILED" | python3 -c \
+      "import sys,json; d=json.load(sys.stdin); print(d['services']['redis']['status'])" \
+      2>/dev/null || echo "unknown")
+    echo "  Redis: $REDIS_STATUS"
+
+    FB_STATUS=$(echo "$DETAILED" | python3 -c \
+      "import sys,json; d=json.load(sys.stdin); print(d['services']['firebase']['status'])" \
+      2>/dev/null || echo "unknown")
+    echo "  Firebase: $FB_STATUS"
+  fi
+fi
+
+echo ""
+echo "[ FIREBASE HOSTING CHECKS ]"
+if echo "$FRONTEND" | grep -q "web.app\|firebaseapp.com"; then
+  echo "  ℹ️  Firebase Hosting deployment detected"
+  check "Firebase Hosting root" "$FRONTEND" "200"
+  check "SPA rewrite (/dashboard)" "$FRONTEND/dashboard" "200"
+  check "SPA rewrite (/about)" "$FRONTEND/about" "200"
+fi
+
 if [ "$FAIL" -gt 0 ]; then exit 1; fi

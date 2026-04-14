@@ -81,12 +81,12 @@ async def predict_zone_congestion(
         "prev_density_score": latest.density_score
     }
     
-    model = CrowdDensityModel()
-    if not model.is_fitted:
+    from app.services.ml.crowd_model import crowd_model
+    if not crowd_model.is_fitted:
         # In a real deployed app, model is loaded at startup
         return {"status": "Model not yet trained. Prediction unavailable."}
         
     try:
-        return model.predict_next_hour(str(zone_id), current_features)
+        return crowd_model.predict_next_hour(str(zone_id), current_features)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

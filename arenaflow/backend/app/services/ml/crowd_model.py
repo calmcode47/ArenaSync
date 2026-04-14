@@ -195,3 +195,5 @@ class CrowdDensityModel:
         self.label_encoder = payload["label_encoder"]
         self.is_fitted = True
         self.logger.info(f"Model loaded from {path}")
+
+crowd_model = CrowdDensityModel()

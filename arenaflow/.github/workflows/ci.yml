@@ -146,3 +146,79 @@ jobs:
             exit 1
           fi
           echo "Repo size: ${SIZE} bytes — OK"
+
+  deploy-backend:
+    name: Deploy to Cloud Run
+    needs: [backend-quality, backend-tests, frontend-build, repo-size-check]
+    runs-on: ubuntu-latest
+    # Only deploy on push to main (not on PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      id-token: write   # Required for Workload Identity Federation (alternative to SA key)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE="${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.AR_REPO }}/backend:${{ github.sha }}"
+          docker build -f Dockerfile.backend -t "$IMAGE" -t "${IMAGE%:*}:latest" .
+          docker push --all-tags "${IMAGE%:*}"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ vars.CLOUD_RUN_SERVICE }}
+          region: ${{ vars.GCP_REGION }}
+          image: ${{ env.IMAGE }}
+          flags: |
+            --min-instances=0
+            --max-instances=3
+            --memory=1Gi
+            --cpu=1
+            --timeout=300
+            --concurrency=80
+            --allow-unauthenticated
+            --port=8000
+
+      - name: Verify deployment health
+        run: |
+          sleep 15  # Wait for Cloud Run to finish rolling out
+          URL=$(gcloud run services describe ${{ vars.CLOUD_RUN_SERVICE }} \
+            --region=${{ vars.GCP_REGION }} \
+            --format="value(status.url)")
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL/health")
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Deployment healthy: $URL"
+            echo "DEPLOY_URL=$URL" >> $GITHUB_ENV
+          else
+            echo "❌ Health check failed: HTTP $STATUS"
+            exit 1
+          fi
+
+      - name: Post deployment summary
+        if: success()
+        run: |
+          echo "## 🚀 Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | ${{ vars.CLOUD_RUN_SERVICE }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Region | ${{ vars.GCP_REGION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| URL | ${{ env.DEPLOY_URL }} |" >> $GITHUB_STEP_SUMMARY
