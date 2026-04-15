@@ -74,54 +74,74 @@ By unifying 3D spatial modeling, predictive Machine Learning (Prophet), and mult
 
 ---
 
+---
+
+## 🚀 Deployment & DevOps
+
+### 🛠️ Production Automation Scripts
+Located in the `scripts/` directory, these tools automate the entire infrastructure setup:
+
+- **[gcloud_setup.sh](file:///Users/mayank/Documents/GitHub/ArenaSync/arenaflow/scripts/gcloud_setup.sh)**: Provisions GCP APIs, Artifact Registry, and IAM roles for Cloud Run.
+- **[firebase_setup.sh](file:///Users/mayank/Documents/GitHub/ArenaSync/arenaflow/scripts/firebase_setup.sh)**: Deploys Firestore rules and provides instructions for Firebase Admin setup.
+- **[build_and_deploy_frontend.sh](file:///Users/mayank/Documents/GitHub/ArenaSync/arenaflow/scripts/build_and_deploy_frontend.sh)**: Automates the Vite production build and Firebase Hosting deployment.
+- **[deploy.sh](file:///Users/mayank/Documents/GitHub/ArenaSync/arenaflow/scripts/deploy.sh)**: Convenience wrapper for triggering Cloud Build deployments.
+
+### 🤖 CI/CD Pipeline
+ArenaFlow utilizes **GitHub Actions** for continuous integration and delivery. 
+- **Workflow**: `.github/workflows/ci.yml`
+- **Actions**: Linting (Ruff/Black), Type Checking (Mypy/TSC), Automated Tests (Pytest), and **Auto-Deployment** to Cloud Run on push to `main`.
+- **Setup**: See [github_secrets_setup.md](file:///Users/mayank/Documents/GitHub/ArenaSync/arenaflow/scripts/github_secrets_setup.md) for configuring repository secrets.
+
+---
+
 ## 🚀 Setup & Launch Instructions
 
-### 1. Prerequisites
-- `Node.js 18+` and `npm`
-- `Python 3.11+`
-- `Docker` and `docker-compose`
+### 1. Local Development
+1. **Prerequisites**: Node.js 18+, Python 3.11+, Docker.
+2. **Backend**: `cd ArenaFlow && docker-compose up -d --build`
+3. **Frontend**: `cd frontend && npm install && npm run dev`
 
-### 2. Backend Bootup (via Docker)
-1. Clone the repository and navigate to the project directory: `cd ArenaFlow`
-2. Configure your Environment Variables: Create a `backend/.env` file with your connection strings (see Environment Variables section).
-3. Spin up the Postgres database and FastAPI server via Compose:
-   ```bash
-   docker-compose up -d --build
-   ```
-4. Confirm FastAPI is running: Navigate to [http://localhost:8000/docs](http://localhost:8000/docs) to view the Swagger API reference.
+### 2. Production Deployment (Cloud)
+To deploy the full-stack infrastructure to GCP and Firebase:
 
-### 3. Frontend Bootup
-1. Setup the client UI framework:
-   ```bash
-   cd frontend
-   npm install --legacy-peer-deps
-   ```
-2. Setup environment keys: Create `.env` storing `VITE_GOOGLE_MAPS_API_KEY`.
-3. Launch the development server:
-   ```bash
-   npm run dev
-   ```
+```bash
+# 1. Provision GCP Resources
+bash scripts/gcloud_setup.sh
+
+# 2. Deploy Backend via Cloud Build
+gcloud builds submit --config cloudbuild.yaml .
+
+# 3. Setup Firebase Notifications/Hosting
+bash scripts/firebase_setup.sh
+bash scripts/build_and_deploy_frontend.sh
+```
+
+---
+
+## 🔍 Observability & Health
+ArenaFlow includes a specialized health monitoring system:
+- **Liveness Probe**: `GET /health` (Status: 200)
+- **Detailed Audit**: `GET /health/detailed`
+  - In-depth verification of Database, Redis, Firebase, and ML engines status.
+  - Requires admin privileges in production.
 
 ---
 
 ## 🔑 Environment Variables Reference
 
-#### Backend (`backend/.env`)
-```
-APP_ENV=development
-SECRET_KEY=supersecretkey...
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/arenaflow
-UPSTASH_REDIS_REST_URL=https://...
-UPSTASH_REDIS_REST_TOKEN=token...
-FIREBASE_CREDENTIALS_PATH=./firebase-deploy.json
-GOOGLE_MAPS_API_KEY=AIz...
-GOOGLE_TRANSLATE_API_KEY=AIy...
-```
+#### Backend (`backend/.env` or Secret Manager)
+| Variable | Purpose |
+|---|---|
+| `APP_ENV` | `development` or `production` |
+| `DATABASE_URL` | Supabase / Postgres connection string |
+| `FIREBASE_CREDENTIALS_BASE64` | Encoded service account for Cloud Run |
+| `UPSTASH_REDIS_REST_URL` | Serverless Redis endpoint |
 
-#### Frontend (`frontend/.env`)
-```
-VITE_GOOGLE_MAPS_API_KEY=AIy...
-```
+#### Frontend (`frontend/.env.production`)
+| Variable | Purpose |
+|---|---|
+| `VITE_API_URL` | Your Cloud Run Service URL |
+| `VITE_FIREBASE_API_KEY` | Public Firebase Config |
 
 ---
 
