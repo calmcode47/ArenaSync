@@ -1,47 +1,21 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 import asyncio
-import orjson
 import logging
 from uuid import UUID
 
+import orjson
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.dependencies import get_db, get_current_user
+from app.core.security import decode_access_token
 from app.websocket.manager import manager
-from app.core.dependencies import get_db
 from app.services.crowd_service import CrowdService
 from app.services.alert_service import AlertService
 
-from jose import jwt, JWTError
 from app.core.config import settings
-from sqlalchemy import select
-from app.models.user import User
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-async def verify_token_ws(token: str, db: AsyncSession):
-    try:
-        # Check standard JWT
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id = payload.get("sub")
-        if user_id:
-            res = await db.execute(select(User).where(User.id == getattr(User, "id") if isinstance(user_id, str) else user_id)) # type: ignore
-            # Workaround for UUID parsing vs string ID based on User model
-            return res.scalars().first()
-    except JWTError:
-        pass
-    
-    # Check Firebase token fallback
-    try:
-        from app.core.firebase import firebase_client
-        decoded = await firebase_client.verify_token(token)
-        if decoded:
-            uid = decoded.get("uid")
-            res = await db.execute(select(User).where(User.firebase_uid == uid))
-            return res.scalars().first()
-    except Exception:
-        pass
-        
-    return None
 
 ALLOWED_WS_ORIGINS = [
     origin.strip()
@@ -63,9 +37,13 @@ async def websocket_endpoint(
         return
 
     # Validate JWT token
-    from app.core.security import decode_access_token
     payload = decode_access_token(token)
     if not payload:
+        await websocket.close(code=4001)
+        return
+    try:
+        await get_current_user(token=token, db=db)
+    except Exception:
         await websocket.close(code=4001)
         return
 

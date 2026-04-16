@@ -159,6 +159,7 @@ export default function LiveMap() {
             const t2 = setTimeout(() => setShowGlobe(false), 3000);
             return () => { clearTimeout(t1); clearTimeout(t2); };
         }
+        return undefined;
     }, []);
 
     useEffect(() => {

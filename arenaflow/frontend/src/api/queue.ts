@@ -11,12 +11,12 @@ export const getZoneQueuePrediction = async (zoneId: string): Promise<QueuePredi
     return res.data;
 };
 
-export const postQueueEntry = async (data: { zone_id: string, venue_id: string, queue_length: number, service_rate: number }): Promise<any> => {
+export const postQueueEntry = async (data: { zone_id: string, venue_id?: string, queue_length: number, service_rate?: number }): Promise<any> => {
     const res = await apiClient.post(`/queue/record`, data);
     return res.data;
 };
 
 export const updateActualWait = async (entryId: string, actualWaitMinutes: number): Promise<any> => {
-    const res = await apiClient.put(`/queue/entry/${entryId}/actual-wait`, { actual_wait_minutes: actualWaitMinutes });
+    const res = await apiClient.patch(`/queue/entry/${entryId}/actual-wait`, null, { params: { actual_wait_minutes: actualWaitMinutes } });
     return res.data;
 };

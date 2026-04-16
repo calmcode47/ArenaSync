@@ -47,6 +47,15 @@ async def test_login_nonexistent_user(client: AsyncClient):
     response = await client.post("/api/v1/auth/login", data=data)
     assert response.status_code == 401
 
+async def test_get_me_with_legacy_email_subject_token(client: AsyncClient, test_user, auth_headers):
+    user, _ = test_user
+    from app.core.security import create_access_token
+
+    legacy_token = create_access_token(subject=user.email, extra_claims={"role": user.role})
+    response = await client.get("/api/v1/auth/me", headers=auth_headers(legacy_token))
+    assert response.status_code == 200
+    assert response.json()["id"] == str(user.id)
+
 async def test_get_me_authenticated(client: AsyncClient, test_user, auth_headers):
     user, token = test_user
     response = await client.get("/api/v1/auth/me", headers=auth_headers(token))

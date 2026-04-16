@@ -142,9 +142,7 @@ function GridAxis({ zonesCount, maxWait }: { zonesCount: number, maxWait: number
             </mesh>
 
             {/* Vertical Y Axis */}
-            <line geometry={geo}>
-                <lineBasicMaterial color="#444466" />
-            </line>
+            <primitive object={new THREE.Line(geo, new THREE.LineBasicMaterial({ color: "#444466" }))} />
             
             {/* Ticks mapping Wait Time to 6 unit max height */}
             {ticks.map(tick => {
@@ -153,10 +151,7 @@ function GridAxis({ zonesCount, maxWait }: { zonesCount: number, maxWait: number
                 const yPos = percentage * 6;
                 return (
                     <group key={`tick-${tick}`} position={[leftEdge, yPos, 0]}>
-                         <line>
-                             <bufferGeometry attach="geometry" {...new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.2, 0, 0), new THREE.Vector3(0.2, 0, 0)])} />
-                             <lineBasicMaterial attach="material" color="#444466" />
-                         </line>
+                         <primitive object={new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.2, 0, 0), new THREE.Vector3(0.2, 0, 0)]), new THREE.LineBasicMaterial({ color: "#444466" }))} />
                          <Text position={[-0.4, 0, 0]} fontSize={0.25} color="#444466" anchorX="right" anchorY="middle">
                              {tick}m{tick===30?'+':''}
                          </Text>

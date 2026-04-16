@@ -12,5 +12,6 @@ export function useQueue(venueId: string | null) {
     retryDelay: 5000,
   });
 
-  return { queueSummary: data ?? null, isLoading, isError, error, refetch };
+  const summary = data ?? null;
+  return { queueSummary: summary, summary, isLoading, isError, error, refetch };
 }

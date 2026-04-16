@@ -8,8 +8,9 @@ export type CongestionLevel = "low" | "moderate" | "high" | "critical";
 export interface ZoneCrowdStatus { zone_id: string; zone_name: string; zone_type: string; density_score: number; congestion_level: CongestionLevel; current_count: number; capacity: number; latitude?: number; longitude?: number; polygon_coords?: any; }
 export interface CrowdHeatmapPoint { latitude: number; longitude: number; weight: number; }
 export interface VenueHeatmapOut { venue_id: string; points: CrowdHeatmapPoint[]; generated_at: string; }
-export interface QueuePredictionOut { zone_id: string; zone_name: string; current_queue_length: number; estimated_wait_minutes: number; prediction_confidence: number; next_30min_forecast: any[]; }
-export interface VenueQueueSummary { venue_id: string; zones: QueuePredictionOut[]; worst_zone_id: string; best_zone_id: string; }
+export interface QueueForecastPoint { timestamp: string; wait_time_minutes: number; yhat_lower: number; yhat_upper: number; }
+export interface QueuePredictionOut { zone_id: string; zone_name: string; current_queue_length: number; estimated_wait_minutes: number; confidence_score: number; congestion_level: CongestionLevel; next_30min_forecast: QueueForecastPoint[]; }
+export interface VenueQueueSummary { venue_id: string; total_global_queue_length: number; average_wait_minutes: number; zones: QueuePredictionOut[]; worst_zone_id: string; best_zone_id: string; }
 export interface Alert { id: string; venue_id: string; zone_id?: string; alert_type: string; severity: AlertSeverity; title: string; message: string; translated_messages: any; is_resolved: boolean; fcm_sent: boolean; created_at: string; }
 export type AlertSeverity = "low" | "medium" | "high" | "critical";
 export type AlertType = "overcrowding" | "long_queue" | "emergency" | "weather" | "info" | "staff_needed";

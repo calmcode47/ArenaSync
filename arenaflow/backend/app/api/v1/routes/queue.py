@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any
+from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.core.dependencies import get_db, get_current_user, limiter
 from app.models.user import User
@@ -16,7 +17,7 @@ def require_staff(user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return user
 
-@router.post("/record", response_model=QueueEntryOut)
+@router.post("/record", response_model=QueueEntryOut, status_code=201)
 async def record_queue_entry(
     entry_in: QueueEntryCreate,
     current_user: User = Depends(require_staff),
@@ -48,10 +49,10 @@ async def get_zone_prediction(
     service = QueueService(db)
     return await service.get_zone_prediction(zone_id)
 
-@router.put("/entry/{entry_id}/actual-wait", response_model=QueueEntryOut)
+@router.patch("/entry/{entry_id}/actual-wait", response_model=QueueEntryOut)
 async def update_actual_wait(
     entry_id: UUID,
-    actual_minutes: float,
+    actual_wait_minutes: float,
     current_user: User = Depends(require_staff),
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -60,7 +61,7 @@ async def update_actual_wait(
     if not entry:
         raise HTTPException(status_code=404, detail="Queue entry not found")
         
-    entry.actual_wait_minutes = actual_minutes
+    entry.actual_wait_minutes = actual_wait_minutes
     await db.commit()
     await db.refresh(entry)
     return entry

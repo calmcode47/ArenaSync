@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrthographicCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -113,7 +114,7 @@ function RadarSweep({ alerts }: { alerts: any[] }) {
 
     return (
         <group>
-            <orthographicCamera makeDefault position={[0, 10, 0.001]} zoom={1} args={[-5 * aspect, 5 * aspect, 5, -5, 0.1, 100]} />
+            <OrthographicCamera makeDefault position={[0, 10, 0.001]} zoom={1} args={[-5 * aspect, 5 * aspect, 5, -5, 0.1, 100]} />
             
             {/* Background Rings */}
             {rings.map((ring, i) => (
@@ -125,9 +126,7 @@ function RadarSweep({ alerts }: { alerts: any[] }) {
             {/* Sweep arm */}
             <group ref={sweepGroupRef}>
                 {sweepLines.map((line, i) => (
-                    <line key={`sweep-${i}`} geometry={line.geo}>
-                        <lineBasicMaterial color="#00d4ff" opacity={line.opacity} transparent />
-                    </line>
+                    <primitive key={`sweep-${i}`} object={new THREE.Line(line.geo, new THREE.LineBasicMaterial({ color: "#00d4ff", opacity: line.opacity, transparent: true }))} />
                 ))}
             </group>
 

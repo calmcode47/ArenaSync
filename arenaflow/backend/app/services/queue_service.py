@@ -1,10 +1,11 @@
 import logging
 from uuid import UUID
 from datetime import datetime, timezone, timedelta
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
+
 from fastapi import HTTPException
 import pandas as pd
+from sqlalchemy import desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.queue_entry import QueueEntry
 from app.models.zone import Zone
@@ -21,12 +22,19 @@ class QueueService:
         self.db = db
 
     async def record_queue(self, data: QueueEntryCreate) -> QueueEntryOut:
-        # Pseudo Prophet API integration
+        zone = await self._get_zone(data.zone_id)
+        if not zone:
+            raise HTTPException(status_code=404, detail="Zone not found")
+
+        venue_id = data.venue_id or zone.venue_id
+        if data.venue_id and data.venue_id != zone.venue_id:
+            raise HTTPException(status_code=409, detail="venue_id does not match zone_id")
+
         estimated_wait_minutes = (data.queue_length / data.service_rate) if data.service_rate > 0 else 0.0
-        
+
         entry = QueueEntry(
             zone_id=data.zone_id,
-            venue_id=data.venue_id,
+            venue_id=venue_id,
             queue_length=data.queue_length,
             estimated_wait_minutes=estimated_wait_minutes,
             service_rate=data.service_rate,
@@ -101,13 +109,32 @@ class QueueService:
                 for i in range(1, 7)
             ]
 
+        congestion_level = "low"
+        if estimated_wait >= 10:
+            congestion_level = "moderate"
+        if estimated_wait >= 20:
+            congestion_level = "high"
+        if estimated_wait >= 30:
+            congestion_level = "critical"
+
+        forecast = [
+            {
+                "timestamp": point["ds"],
+                "wait_time_minutes": round(float(point["yhat"]), 1),
+                "yhat_lower": round(float(point["yhat_lower"]), 1),
+                "yhat_upper": round(float(point["yhat_upper"]), 1),
+            }
+            for point in next_30min
+        ]
+
         return QueuePredictionOut(
-            zone_id=str(zone_id),
+            zone_id=zone_id,
             zone_name=zone.name,
             current_queue_length=queue_length,
             estimated_wait_minutes=round(estimated_wait, 1),
-            prediction_confidence=round(confidence, 2),
-            next_30min_forecast=next_30min
+            confidence_score=round(confidence, 2),
+            congestion_level=congestion_level,
+            next_30min_forecast=forecast,
         )
 
     async def get_venue_queue_summary(self, venue_id: UUID) -> VenueQueueSummary:
@@ -121,13 +148,24 @@ class QueueService:
                 predictions.append(pred)
                 
         if not predictions:
-            return VenueQueueSummary(venue_id=venue_id, zones=[], worst_zone_id="", best_zone_id="")
-            
+            return VenueQueueSummary(
+                venue_id=venue_id,
+                total_global_queue_length=0,
+                average_wait_minutes=0.0,
+                zones=[],
+                worst_zone_id="",
+                best_zone_id="",
+            )
+
         worst_zone = max(predictions, key=lambda p: p.estimated_wait_minutes)
         best_zone = min(predictions, key=lambda p: p.estimated_wait_minutes)
-        
+        total_global_queue_length = sum(pred.current_queue_length for pred in predictions)
+        average_wait_minutes = sum(pred.estimated_wait_minutes for pred in predictions) / len(predictions)
+
         return VenueQueueSummary(
             venue_id=venue_id,
+            total_global_queue_length=total_global_queue_length,
+            average_wait_minutes=round(average_wait_minutes, 1),
             zones=predictions,
             worst_zone_id=str(worst_zone.zone_id),
             best_zone_id=str(best_zone.zone_id)

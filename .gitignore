@@ -1,4 +1,9 @@
 # Logs
+.DS_Store
+__pycache__/
+*.py[cod]
+dist/
+*/dist/
 logs
 *.log
 npm-debug.log*

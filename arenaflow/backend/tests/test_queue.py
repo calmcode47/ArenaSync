@@ -17,6 +17,7 @@ async def test_record_queue_entry(client: AsyncClient, test_staff, test_venue, a
     res_data = res.json()
     assert "estimated_wait_minutes" in res_data
     assert res_data["queue_length"] == 50
+    assert res_data["venue_id"] == str(zones[0].venue_id)
 
 async def test_get_venue_queue_summary(client: AsyncClient, test_venue):
     venue, zones = test_venue

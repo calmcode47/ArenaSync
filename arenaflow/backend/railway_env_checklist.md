@@ -1,6 +1,9 @@
 # Railway Environment Variables Checklist
 ## Set these in Railway → Project → Variables before deploying
 
+Railway is the active production backend path.
+Configure the Railway GitHub deployment to wait for the root GitHub Actions CI workflow before autodeploying.
+
 ### Required (app will crash without these)
 | Variable | Description | Example |
 |---|---|---|
@@ -10,7 +13,7 @@
 | UPSTASH_REDIS_REST_URL | Upstash Redis HTTPS URL | https://xxx.upstash.io |
 | UPSTASH_REDIS_REST_TOKEN | Upstash Redis token | AXxx... |
 | FIREBASE_PROJECT_ID | Firebase project ID | arenaflow-xxxxx |
-| ALLOWED_ORIGINS | Frontend URLs (comma-separated) | https://arenaflow.vercel.app |
+| ALLOWED_ORIGINS | Frontend URLs (comma-separated) | https://flowarena-694a7.web.app |
 
 ### Required for Google Services (affects judging score)
 | Variable | Description |

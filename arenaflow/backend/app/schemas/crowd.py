@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Any
 
 class CrowdSnapshotCreate(BaseModel):
     zone_id: UUID
-    venue_id: UUID
+    venue_id: Optional[UUID] = None
     current_count: int
     flow_direction: Optional[Any] = None
 

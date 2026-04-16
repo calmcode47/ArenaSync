@@ -99,9 +99,7 @@ function GroundFog() {
     return (
         <group>
             {/* Infinite grid - barely visible primary, #00d4ff sectionals */}
-            <gridHelper args={[80, 80, 0x1a1a24, new THREE.Color(0x00d4ff)]} position={[0, -0.01, 0]}>
-                <material attach="material" opacity={0.15} transparent depthWrite={false} color={0x00d4ff} />
-            </gridHelper>
+            <gridHelper args={[80, 80, 0x1a1a24, 0x00d4ff]} position={[0, -0.01, 0]} />
             {/* Overlay Gradient Map */}
             <mesh geometry={geo} material={mat} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} />
         </group>
@@ -227,11 +225,11 @@ function StadiumShell() {
             <mesh geometry={baseRingGeo} material={baseRingMat} rotation={[-Math.PI/2, 0, 0]} position={[0, 0.1, 0]} />
             
             {ribsGeos.map((geo, i) => (
-               <line key={`rib-${i}`} geometry={geo} material={ribMats[i]} />
+               <primitive key={`rib-${i}`} object={new THREE.Line(geo, ribMats[i])} />
             ))}
 
             {roofGeos.map((geo, i) => (
-                <line key={`roof-${i}`} geometry={geo} material={roofMat} />
+                <primitive key={`roof-${i}`} object={new THREE.Line(geo, roofMat)} />
             ))}
 
             <mesh ref={scanRingRef} geometry={scanRingGeo} material={scanRingMat} rotation={[-Math.PI/2, 0, 0]} />
@@ -289,7 +287,7 @@ function ZoneMarker({ zone, index, total }: { zone: ZoneCrowdStatus; index: numb
 
     return (
         <group ref={markerRef}>
-            <line geometry={geo} material={mat} />
+            <primitive object={new THREE.Line(geo, mat)} />
             
             {/* Hit box for raycasting */}
             <mesh position={[geo.attributes.position.getX(1), 2.2, geo.attributes.position.getZ(1)]} 

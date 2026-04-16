@@ -1,13 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import timedelta
 from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.dependencies import get_db, get_current_user, limiter
 from app.models.user import User
-from app.schemas.user import UserCreate, UserOut, UserUpdate, LoginRequest, TokenOut
+from app.schemas.user import TokenOut, UserCreate, UserOut, UserUpdate
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.firebase import firebase_client
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -22,7 +26,7 @@ async def register(
     result = await db.execute(select(User).where(User.email == user_in.email))
     if result.scalars().first():
         raise HTTPException(
-            status_code=400,
+            status_code=409,
             detail="The user with this email already exists in the system."
         )
     user = User(
@@ -41,18 +45,22 @@ async def register(
 @limiter.limit("10/minute")
 async def login(
     request: Request,
-    login_data: LoginRequest,
+    form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db)
 ) -> Any:
     """Login and get a JWT."""
-    result = await db.execute(select(User).where(User.email == login_data.email))
+    result = await db.execute(select(User).where(User.email == form_data.username))
     user = result.scalars().first()
-    if not user or not verify_password(login_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
     if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
-        
-    access_token = create_access_token(subject=str(user.id))
+        raise HTTPException(status_code=401, detail="Inactive user")
+
+    access_token = create_access_token(
+        subject=str(user.id),
+        extra_claims={"role": user.role, "email": user.email},
+        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/firebase-login", response_model=TokenOut)
@@ -93,7 +101,10 @@ async def firebase_login(
     await db.commit()
     await db.refresh(user)
     
-    access_token = create_access_token(subject=str(user.id))
+    access_token = create_access_token(
+        subject=str(user.id),
+        extra_claims={"role": user.role, "email": user.email},
+    )
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=UserOut)
@@ -129,5 +140,8 @@ async def refresh_token(
     current_user: User = Depends(get_current_user)
 ) -> Any:
     """Refresh JWT token for current user."""
-    access_token = create_access_token(subject=str(current_user.id))
+    access_token = create_access_token(
+        subject=str(current_user.id),
+        extra_claims={"role": current_user.role, "email": current_user.email},
+    )
     return {"access_token": access_token, "token_type": "bearer"}

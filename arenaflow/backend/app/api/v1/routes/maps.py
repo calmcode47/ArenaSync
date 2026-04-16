@@ -1,22 +1,48 @@
-from fastapi import APIRouter, Depends, Request, Query, HTTPException
-from typing import Any, List
+from typing import Any
 from uuid import UUID
 
-from app.core.dependencies import limiter
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.core.dependencies import get_db, limiter
+from app.models.venue import Venue
+from app.schemas.venue import VenueOut
 from app.services.maps_service import MapsService
 
 router = APIRouter()
 maps_service = MapsService()
+
+@router.get("/venue/{venue_id}", response_model=VenueOut)
+async def get_venue(
+    venue_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> VenueOut:
+    result = await db.execute(
+        select(Venue)
+        .options(selectinload(Venue.zones))
+        .where(Venue.id == venue_id)
+    )
+    venue = result.scalars().first()
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    return VenueOut.model_validate(venue)
 
 @router.get("/venue/{venue_id}/details")
 @limiter.limit("30/minute")
 async def get_venue_details(
     request: Request,
     venue_id: UUID,
-    place_id: str
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Get Google Maps place details for a venue's Place ID."""
-    return await maps_service.get_venue_details(place_id)
+    """Get Google Maps place details for a venue's stored Place ID."""
+    venue = await db.get(Venue, venue_id)
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    if not venue.google_place_id:
+        raise HTTPException(status_code=409, detail="Venue has no stored Google Place ID")
+    return await maps_service.get_venue_details(venue.google_place_id)
 
 @router.get("/directions")
 @limiter.limit("20/minute")

@@ -35,6 +35,8 @@ class VenueCreate(VenueBase):
 
 class VenueOut(VenueBase):
     id: UUID
+    google_place_id: Optional[str] = None
+    config_json: Optional[Any] = None
     is_active: bool
     created_at: datetime
     zones: List[ZoneOut]

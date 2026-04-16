@@ -225,17 +225,17 @@ export default function App() {
             try {
                 if (venueId && !venue) {
                     try {
-                        const res = await apiClient.get(`/maps/venue/${venueId}/details`);
+                        const res = await apiClient.get(`/maps/venue/${venueId}`);
                         setVenue(res.data);
-                    } catch (e: any) {
                         try {
-                            const resFallback = await apiClient.get(`/maps/venue/${venueId}`);
-                            setVenue(resFallback.data);
-                        } catch (err: any) {
-                            if (err.response?.status === 404) {
-                                clearVenue();
-                                setVenueId(null);
-                            }
+                            await apiClient.get(`/maps/venue/${venueId}/details`);
+                        } catch {
+                            // Details enrichment is optional during boot.
+                        }
+                    } catch (err: any) {
+                        if (err.response?.status === 404) {
+                            clearVenue();
+                            setVenueId(null);
                         }
                     }
                 }

@@ -15,6 +15,20 @@ concurrency:
 jobs:
   backend-quality:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/arenaflow_test?prepared_statement_cache_size=0
+      DATABASE_MIGRATION_URL: postgresql+psycopg2://test:test@localhost:5432/arenaflow_test
+      SECRET_KEY: ci_test_secret_key_32_chars_min_x
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+      APP_ENV: test
+      UPSTASH_REDIS_REST_URL: ""
+      UPSTASH_REDIS_REST_TOKEN: ""
+      FIREBASE_PROJECT_ID: ""
+      FIREBASE_CREDENTIALS_PATH: ""
+      ALLOWED_ORIGINS: '["http://localhost:5173"]'
+      GOOGLE_MAPS_API_KEY: ""
+      GOOGLE_TRANSLATE_API_KEY: ""
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
@@ -27,6 +41,7 @@ jobs:
       - run: cd arenaflow/backend && ruff check app/
       - run: cd arenaflow/backend && black --check app/
       - run: cd arenaflow/backend && mypy app/
+      - run: cd arenaflow/backend && python -c "from app.main import app; print(app.title)"
 
   backend-tests:
     needs: [backend-quality]
@@ -51,7 +66,7 @@ jobs:
       UPSTASH_REDIS_REST_URL: ""
       UPSTASH_REDIS_REST_TOKEN: ""
       FIREBASE_PROJECT_ID: ""
-      ALLOWED_ORIGINS: "http://localhost:5173"
+      ALLOWED_ORIGINS: '["http://localhost:5173"]'
       GOOGLE_MAPS_API_KEY: ""
       GOOGLE_TRANSLATE_API_KEY: ""
     steps:

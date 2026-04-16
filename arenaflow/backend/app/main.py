@@ -1,8 +1,7 @@
 from contextlib import asynccontextmanager
-from typing import Dict
-import uuid
 import asyncio
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -105,10 +104,15 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
 # Placeholders for future routers
 # from app.api.v1 import routes as v1_routes
-from app.api.v1.routes import virtual_queue, ml, health
-# from app.websocket import manager as ws_manager
-# app.include_router(v1_routes.router, prefix="/api/v1")
+from app.api.v1.routes import alerts, auth, crowd, health, maps, ml, queue, virtual_queue
+from app.websocket import handlers as websocket_handlers
+
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
+app.include_router(maps.router, prefix="/api/v1/maps", tags=["Maps"])
+app.include_router(crowd.router, prefix="/api/v1/crowd", tags=["Crowd"])
+app.include_router(queue.router, prefix="/api/v1/queue", tags=["Queue"])
+app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["Alerts"])
 app.include_router(virtual_queue.router, prefix="/api/v1/vqueue", tags=["Virtual Queue"])
 app.include_router(ml.router, prefix="/api/v1/ml", tags=["Machine Learning"])
 app.include_router(health.router, prefix="/health", tags=["Health"])
-# app.include_router(ws_manager.router, prefix="/ws")
+app.include_router(websocket_handlers.router, prefix="/ws", tags=["WebSocket"])

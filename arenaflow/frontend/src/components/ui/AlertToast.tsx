@@ -25,6 +25,7 @@ const AlertToast: React.FC<AlertToastProps> = ({ alert, onDismiss }) => {
             const timer = setTimeout(onDismiss, 8000);
             return () => clearTimeout(timer);
         }
+        return undefined;
     }, [isHighCrit, onDismiss]);
 
     const bgMap = {

@@ -66,6 +66,14 @@ def _initialize_firebase() -> Optional[firebase_admin.App]:
 # Global Firebase app instance
 firebase_app = _initialize_firebase()
 
+
+class FirebaseClient:
+    async def verify_token(self, id_token: str) -> Optional[Dict[str, Any]]:
+        return await verify_firebase_token(id_token)
+
+
+firebase_client = FirebaseClient()
+
 async def verify_firebase_token(id_token: str) -> Optional[Dict[str, Any]]:
     """
     Verify Firebase ID token.

@@ -10,8 +10,16 @@ from typing import AsyncGenerator
 # Set test environment constraints before imports evaluate
 os.environ["APP_ENV"] = "test"
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:postgres@localhost:5432/arenaflow_test"
+os.environ["DATABASE_MIGRATION_URL"] = "postgresql+psycopg2://postgres:postgres@localhost:5432/arenaflow_test"
 os.environ["SECRET_KEY"] = "test_super_secret_key"
 os.environ["ALGORITHM"] = "HS256"
+os.environ["UPSTASH_REDIS_REST_URL"] = "https://example.upstash.io"
+os.environ["UPSTASH_REDIS_REST_TOKEN"] = "test_token"
+os.environ["FIREBASE_CREDENTIALS_PATH"] = "/tmp/test-firebase.json"
+os.environ["FIREBASE_PROJECT_ID"] = "test-project"
+os.environ["GOOGLE_MAPS_API_KEY"] = "test_maps_key"
+os.environ["GOOGLE_TRANSLATE_API_KEY"] = "test_translate_key"
+os.environ["ALLOWED_ORIGINS"] = "[\"http://localhost:5173\"]"
 
 from app.core.config import settings
 from app.db.session import Base, get_db
@@ -69,7 +77,7 @@ async def test_user(test_db: AsyncSession, fake: Faker):
     test_db.add(user)
     await test_db.commit()
     await test_db.refresh(user)
-    token = create_access_token(data={"sub": user.email, "role": user.role})
+    token = create_access_token(subject=str(user.id), extra_claims={"role": user.role, "email": user.email})
     return user, token
 
 @pytest_asyncio.fixture
@@ -83,7 +91,7 @@ async def test_admin(test_db: AsyncSession, fake: Faker):
     test_db.add(user)
     await test_db.commit()
     await test_db.refresh(user)
-    token = create_access_token(data={"sub": user.email, "role": user.role})
+    token = create_access_token(subject=str(user.id), extra_claims={"role": user.role, "email": user.email})
     return user, token
 
 @pytest_asyncio.fixture
@@ -97,7 +105,7 @@ async def test_staff(test_db: AsyncSession, fake: Faker):
     test_db.add(user)
     await test_db.commit()
     await test_db.refresh(user)
-    token = create_access_token(data={"sub": user.email, "role": user.role})
+    token = create_access_token(subject=str(user.id), extra_claims={"role": user.role, "email": user.email})
     return user, token
 
 @pytest_asyncio.fixture
@@ -108,7 +116,8 @@ async def test_venue(test_db: AsyncSession, fake: Faker):
         country=fake.country(),
         total_capacity=10000,
         latitude=40.7128,
-        longitude=-74.0060
+        longitude=-74.0060,
+        config_json={}
     )
     test_db.add(venue)
     await test_db.commit()
@@ -123,7 +132,8 @@ async def test_venue(test_db: AsyncSession, fake: Faker):
             zone_type=zone_types[i],
             capacity=2500,
             latitude=40.7128 + (i * 0.001),
-            longitude=-74.0060 + (i * 0.001)
+            longitude=-74.0060 + (i * 0.001),
+            polygon_coords=[]
         )
         test_db.add(zone)
         zones.append(zone)

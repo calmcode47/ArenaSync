@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, List
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_db, get_current_user, limiter
 from app.models.user import User
@@ -16,7 +17,7 @@ def require_staff(user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return user
 
-@router.post("/snapshot", response_model=CrowdSnapshotOut)
+@router.post("/snapshot", response_model=CrowdSnapshotOut, status_code=status.HTTP_201_CREATED)
 async def record_crowd_snapshot(
     snapshot_in: CrowdSnapshotCreate,
     current_user: User = Depends(require_staff),

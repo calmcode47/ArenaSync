@@ -1,29 +1,18 @@
-# ArenaFlow Project Status Report
+# ArenaFlow Project Status
 
-## 1. Executive Summary
-This report outlines the current architectural stage, development milestones, and operational readiness of the **ArenaFlow** project. The core backend and frontend infrastructures have been heavily fortified, configured for strict type safety, and natively pre-flighted for remote Continuous Integration (CI) execution.
+## Current deployment model
+- CI source of truth: root GitHub Actions workflows in `.github/workflows`
+- Frontend deployment: Firebase Hosting preview/live from repo root `firebase.json`
+- Backend deployment: Railway GitHub autodeploy using root `railway.toml`
+- Backend deploy gate: Railway GitHub integration should be configured with `Wait for CI`
 
-## 2. Infrastructure & DevOps
-- **Continuous Integration:** Implemented a pristine GitHub Actions (`ci.yml`) pipeline structurally mapping four independent routines: `backend-quality`, `backend-tests`, `frontend-build`, and `repo-size-check`. The pipeline runs isolated backend instances (Postgres 16 containers) mocking out the cache/auth layers silently to ensure 0-trust passing builds.
-- **Code Quality Integrations:** Enforced strict compilation requirements utilizing `Ruff`, `Black`, and `MyPy` for Python, alongside stringent structural implementations within `tsconfig.json` ensuring no residual type-failures across R3F (React Three Fiber) dependencies.
-- **Environment Parity:** Both exact backend container mapping logic (via `Dockerfile.backend`) and native frontend Vercel mapping rules (`vercel.json`) have been structurally documented preventing environment drift.
+## Current application state
+- Frontend app lives in `arenaflow/frontend`
+- Backend app lives in `arenaflow/backend`
+- Public app interfaces are mounted under `/api/v1/{auth,maps,crowd,queue,alerts,vqueue,ml}`, `/health`, `/health/detailed`, and `/ws/{venue_id}`
+- Frontend API and websocket URLs derive from `VITE_API_URL`
 
-## 3. Backend Architecture
-- **Supabase Integration:** Replaced local SQL layers migrating fully to Supabase PostgreSQL, leveraging `postgresql+asyncpg` transaction-mode pooling for resilient production data bridging.
-- **Prophet ML Engine Optimization:** Developed mathematical fallback routing resolving Prophet latency limitations ("Cold Start" lag). Implemented `lifespan` asyncio background warmups, insulating the FastAPI process via graceful degradation to Little's Law queues upon unseeded data.
-- **Demo & Seeding Architecture:** Engineered an automated, idempotent `seed_demo.py` routine synthesizing live Arena instances, exact physical Polygon bounds across multiple zones, and backward-looking metrics bridging crowd densities. This immediately supports Hackathon Judging without requiring tedious manual account creation.
-
-## 4. Frontend Architecture
-- **Type Rigidness:** Enforced complex Ambient mapping (`env.d.ts` and `three-fiber.d.ts`). This successfully overrode missing internal Google Maps and custom `<heatmapShaderMaterial />` typings allowing perfect 0-error Vite application hydration.
-- **React Router Navigation:** Overrode underlying Vercel configuration allowing Single Page Applications (SPA) to cleanly intercept HTTP page requests minimizing 404 dead-ends during deployment tracking.
-
-## 5. Pending Execution: Cloud Deployments
-While the codebase configuration is strictly mapped for production endpoints, live runtime deployment into scalable architectures is currently **Pending**.
-
-* **Google Cloud Run (Pending):**
-  Currently, backend container compilation (`Dockerfile.backend`) commands are unmapped to active servers. Cloud Run allows us to scale FastAPI container payloads instantly according to variable traffic without latency lockouts. The next steps require generating the Google Cloud Artifact Registry bounds, uploading the Docker image, and dynamically projecting our Supabase database configurations securely into GCP revision strings.
-* **Firebase (Pending):**
-  The Frontend platform alongside core Auth operations and Firebase Cloud Messaging (FCM) web push notifications await active remote configuration. Moving forward, we need to authenticate the Firebase service accounts, structurally align `firebase.json` limits, and fire off the explicit `firebase deploy --only hosting` pipeline safely mapping our Single Page App (SPA) instances to active domains.
-
----
-*Report generated automatically following infrastructure stabilization.*
+## Retired deployment paths
+- Cloud Run is no longer an active backend deployment target
+- Vercel is no longer an active frontend deployment target
+- Nested Firebase and GitHub workflow config under `arenaflow/` has been removed so the repo root is the only deploy/config source of truth

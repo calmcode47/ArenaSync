@@ -1,19 +1,24 @@
-I just spent the weekend trying to solve one of the most frustrating parts of live events: navigating through thousands of people, guessing which merchandise stand is actually moving, and praying you don’t miss the opening act while trapped in a 45-minute queue. 🏟️
+Large venues still run too much of their crowd flow on guesswork: long queues, overloaded gates, delayed alerts, and poor visibility for staff.
 
-For the #PromptWars Hackathon, I built **ArenaFlow**, a live "tactical ops" dashboard crafted specifically to manage large venue and stadium intelligence from the ground up! 🚀
+For PromptWars, I built **ArenaFlow**: a full-stack venue intelligence platform for monitoring crowd density, queue pressure, and operational alerts in real time.
 
-Instead of relying on chaotic radio chatter, ArenaFlow takes live crowd telemetry and uses it to automatically reroute attendees. Here’s what it's running under the hood:
+What ArenaFlow does:
 
-⚡ **Time-Series Prophet Forecasting:** The backend (FastAPI/Python) predicts exactly which stadium pathways will bottleneck 30-minutes into the future before the surges even happen.
+- Forecasts queue pressure and wait times from live venue data
+- Visualizes crowd density through a live 3D dashboard and map overlays
+- Broadcasts operational alerts with multilingual support
+- Keeps frontend and backend state synchronized over WebSockets
 
-⚡ **Real-time 3D Venue Visualization:** I utilized Three.js & Framer Motion to project a responsive wireframe of the live sector densities—letting venue staff see their stadium congestion instantly.
+Tech stack:
 
-⚡ **Global Communication Matrix:** When things go wrong, staff just hit 'Transmit Alert.' ArenaFlow integrates with Google Cloud Translation to instantly map emergency alerts into 8 distinct languages directly via Firebase Cloud Messaging.
+- **Frontend:** React, TypeScript, Three.js, Framer Motion
+- **Backend:** FastAPI, SQLAlchemy, WebSockets
+- **Google services:** Google Maps, Google Cloud Translation, Firebase Hosting
+- **Deployment:** Firebase Hosting for the frontend, Railway for the backend
 
-Building out the dual Google Maps Heatmap Layer against the automated WebSocket data pipeline taught me a ton about reactive scaling, and dealing with concurrent async data streams was huge.
+The most useful part of this build was turning fragmented venue signals into a single operator view that staff can actually use under pressure.
 
-If you love clean UI and complex data infrastructures, check out the repository to read exactly how the queue matrices are calculated! 
+Live preview: [https://flowarena-694a7.web.app](https://flowarena-694a7.web.app)
+Repository: [https://github.com/calmcode47/ArenaSync](https://github.com/calmcode47/ArenaSync)
 
-🔗 **Check out the repo here:** [GITHUB_LINK_PLACEHOLDER]
-
-#PromptWars #MachineLearning #ThreeJS #FastAPI #Developer #WebDevelopment #Python
+#PromptWars #FastAPI #React #TypeScript #ThreeJS #GoogleCloud #Firebase #WebDevelopment

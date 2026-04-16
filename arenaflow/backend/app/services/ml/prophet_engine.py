@@ -2,21 +2,28 @@
 Prophet-based queue wait time forecasting engine.
 """
 
-import pandas as pd
-from prophet import Prophet
-from typing import Optional, Dict, Any
-import logging
-import time
 from datetime import datetime, timezone, timedelta
+from typing import Any, Dict
+
+import logging
+import pandas as pd
+import time
+
+try:
+    from prophet import Prophet
+except ModuleNotFoundError:  # pragma: no cover - optional dependency in lightweight test envs
+    Prophet = None  # type: ignore[assignment]
 
 class ProphetEngine:
     """Manages Prophet model lifecycle per zone."""
 
     def __init__(self):
-        self._models: Dict[str, Prophet] = {}  # zone_id → fitted model
+        self._models: dict[str, Any] = {}  # zone_id → fitted model
         self.logger = logging.getLogger(__name__)
 
-    def _build_model(self) -> Prophet:
+    def _build_model(self) -> Any:
+        if Prophet is None:
+            raise RuntimeError("Prophet is not installed")
         # Prophet config
         model = Prophet(
             seasonality_mode="multiplicative",

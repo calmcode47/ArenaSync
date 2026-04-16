@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, List
 from uuid import UUID
@@ -68,7 +68,7 @@ async def delete_alert(
     alert_id: UUID,
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
-) -> Any:
+) -> Response:
     """Delete an alert completely from the system (Admin only)."""
     alert = await db.get(Alert, alert_id)
     if not alert:
@@ -76,4 +76,4 @@ async def delete_alert(
         
     await db.delete(alert)
     await db.commit()
-    return None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

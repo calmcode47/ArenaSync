@@ -1,13 +1,13 @@
 from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import List, Optional
 
 class QueueEntryCreate(BaseModel):
     zone_id: UUID
-    venue_id: UUID
+    venue_id: Optional[UUID] = None
     queue_length: int
-    service_rate: float
+    service_rate: float = 10.0
 
 class QueueEntryOut(BaseModel):
     id: UUID
@@ -15,20 +15,32 @@ class QueueEntryOut(BaseModel):
     venue_id: UUID
     queue_length: int
     estimated_wait_minutes: float
+    actual_wait_minutes: Optional[float] = None
+    service_rate: float
     recorded_at: datetime
     
     model_config = ConfigDict(from_attributes=True)
+
+
+class QueueForecastPoint(BaseModel):
+    timestamp: datetime
+    wait_time_minutes: float
+    yhat_lower: float
+    yhat_upper: float
 
 class QueuePredictionOut(BaseModel):
     zone_id: UUID
     zone_name: str
     current_queue_length: int
     estimated_wait_minutes: float
-    prediction_confidence: float
-    next_30min_forecast: List[Dict[str, Any]]
+    confidence_score: float
+    congestion_level: str
+    next_30min_forecast: List[QueueForecastPoint]
 
 class VenueQueueSummary(BaseModel):
     venue_id: UUID
+    total_global_queue_length: int
+    average_wait_minutes: float
     zones: List[QueuePredictionOut]
     worst_zone_id: str
     best_zone_id: str

@@ -83,11 +83,12 @@ export function useWebSocket(venueId: string | null) {
                         useAlertStore.getState().addAlert({
                             id: msg.data.ticket_code,
                             venue_id: venueId,
-                            zone_id: null,
+                            zone_id: undefined,
                             alert_type: "info",
                             severity: "low",
                             title: "Queue Called",
                             message: `Ticket ${msg.data.ticket_code} — proceed to ${msg.data.zone_name}`,
+                            translated_messages: {},
                             is_resolved: false,
                             fcm_sent: false,
                             created_at: new Date().toISOString()

@@ -2,7 +2,7 @@
 
 ## 🎮 Demo Access (Hackathon Judges)
 
-> **Live Preview:** [https://arenaflow.vercel.app](https://arenaflow.vercel.app)
+> **Live Preview:** [https://flowarena-694a7.web.app](https://flowarena-694a7.web.app)
 
 ### Step 1: Open the app
 The VenueSelector modal will appear on first visit.
@@ -21,6 +21,6 @@ Click "STAFF LOGIN" in the VenueSelector modal:
 ### What you can test
 - **Dashboard** — Live 3D crowd visualization + zone grid
 - **Live Map** — Google Maps heatmap with zone markers
-- **Queue Intelligence** — Prophet ML forecasts per zone
+- **Queue Intelligence** — Queue forecasting and congestion intelligence per zone
 - **Alerts Center** — Dispatch an alert (try "OVERCROWDING" + "HIGH" severity)
 - **About** — Scrollytelling 3D presentation

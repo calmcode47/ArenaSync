@@ -38,9 +38,13 @@ class CrowdService:
         else:
             congestion_level = "critical"
 
+        venue_id = data.venue_id or zone.venue_id
+        if data.venue_id and data.venue_id != zone.venue_id:
+            raise HTTPException(status_code=409, detail="venue_id does not match zone_id")
+
         snapshot = CrowdSnapshot(
             zone_id=data.zone_id,
-            venue_id=data.venue_id,
+            venue_id=venue_id,
             current_count=data.current_count,
             density_score=density_score,
             congestion_level=congestion_level,
@@ -58,7 +62,7 @@ class CrowdService:
         if congestion_level in ["high", "critical"]:
             from app.services.alert_service import AlertService
             alert_service = AlertService(self.db)
-            await alert_service.auto_alert_from_crowd(data.zone_id, data.venue_id, congestion_level)
+            await alert_service.auto_alert_from_crowd(data.zone_id, venue_id, congestion_level)
 
         return snapshot_out
 
