@@ -2,6 +2,13 @@ from contextlib import asynccontextmanager
 import asyncio
 import logging
 import uuid
+import bcrypt
+
+# Monkeypatch bcrypt for passlib compatibility in newer Python/bcrypt versions
+if not hasattr(bcrypt, "__about__"):
+    class About:
+        __version__ = bcrypt.__version__
+    bcrypt.__about__ = About()
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +35,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["Content-Security-Policy"] = "default-src 'self'"
+        # Relax CSP for development and required external services
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "connect-src 'self' http://localhost:8000 ws://localhost:8000 https://*.googleapis.com https://*.firebaseio.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googleapis.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data: https://*.googleapis.com https://*.google.com; "
+            "frame-src 'self' https://*.google.com"
+        )
         response.headers["X-Request-ID"] = req_id
         return response
 

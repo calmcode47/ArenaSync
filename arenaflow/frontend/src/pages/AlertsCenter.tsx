@@ -1,9 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrthographicCamera } from '@react-three/drei';
-import * as THREE from 'three';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { 
     Users, Clock, AlertTriangle, CloudRain, Info, UserPlus, Bell, Globe, 
     ShieldAlert, Check, Lock
@@ -35,113 +31,90 @@ const SEVERITY_WEIGHT: Record<string, number> = {
 };
 
 // ------------------------------------------------------------------
-// RADAR SWEEP COMPONENT
+// 2D RADAR SCANNER COMPONENT (Stable Replacement for 3D)
 // ------------------------------------------------------------------
-function RadarSweep({ alerts }: { alerts: any[] }) {
-    const { viewport } = useThree();
-    const sweepGroupRef = useRef<THREE.Group>(null);
-    const blipsRef = useRef<(THREE.Mesh | null)[]>([]);
-    
-    const aspect = viewport.aspect;
+function RadarScanner({ alerts }: { alerts: any[] }) {
     const unresolvedAlerts = alerts.filter(a => !a.is_resolved);
+    const [sweepAngle, setSweepAngle] = useState(0);
 
-    // Build rings using EllipseCurve to get points
-    const rings = useMemo(() => {
-        const radii = [1, 2, 3, 4, 4.8];
-        const opacities = [0.5, 0.4, 0.3, 0.2, 0.15];
-        return radii.map((r, i) => {
-            const curve = new THREE.EllipseCurve(0, 0, r, r * 0.65, 0, 2 * Math.PI, false, 0);
-            const points = curve.getPoints(64);
-            const geo = new THREE.BufferGeometry().setFromPoints(points);
-            // rotate to XZ plane
-            geo.rotateX(-Math.PI / 2);
-            return { geo, opacity: opacities[i] };
-        });
+    // Animation Loop for the Scanner Arm
+    useEffect(() => {
+        let frameId: number;
+        const animate = () => {
+            setSweepAngle(prev => (prev + 1.5) % 360);
+            frameId = requestAnimationFrame(animate);
+        };
+        frameId = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(frameId);
     }, []);
 
-    // Build sweep arm + ghost lines
-    const sweepLines = useMemo(() => {
-        const lines: { geo: THREE.BufferGeometry, opacity: number }[] = [];
-        const offsets = [0, -0.06, -0.12, -0.18, -0.24, -0.30, -0.36, -0.42];
-        const opacities = [1, 0.7, 0.55, 0.42, 0.30, 0.20, 0.12, 0.06];
-        
-        offsets.forEach((ang, idx) => {
-            const geo = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(0, 0, 0),
-                new THREE.Vector3(4.8 * Math.cos(ang), 0, 4.8 * Math.sin(ang))
-            ]);
-            lines.push({ geo, opacity: opacities[idx] });
-        });
-        return lines;
-    }, []);
-
-    // Placed blips pre-calculation
     const blipPositions = useMemo(() => {
+        if (unresolvedAlerts.length === 0) return [];
         return unresolvedAlerts.map((a, i) => {
-            const angle = (i / unresolvedAlerts.length) * Math.PI * 2;
-            const r = 1.5 + (i % 3) * 1.0;
-            return { x: r * Math.cos(angle), z: r * Math.sin(angle), angle, severity: a.severity };
+            // Distribution
+            const angle = (i / unresolvedAlerts.length) * 360;
+            const r = 40 + (i % 3) * 25;
+            const x = 125 + r * Math.cos((angle * Math.PI) / 180);
+            const y = 125 + r * Math.sin((angle * Math.PI) / 180);
+            return { x, y, angle, severity: a.severity };
         });
     }, [unresolvedAlerts]);
 
-    useFrame(() => {
-        if (sweepGroupRef.current) {
-            sweepGroupRef.current.rotation.y -= 0.025; // Continuous sweep
-            
-            // Ping blips based on sweep angle
-            const currentAngle = sweepGroupRef.current.rotation.y % (Math.PI * 2);
-            // Convert to positive 0-2PI representing the sweeping arm's angle
-            const armAngle = (currentAngle < 0 ? currentAngle + Math.PI * 2 : currentAngle);
-
-            blipsRef.current.forEach((blip, i) => {
-                if (!blip) return;
-                const pos = blipPositions[i];
-                // normalize blip angle
-                const bAngle = (pos.angle < 0 ? pos.angle + Math.PI * 2 : pos.angle);
-                
-                // Compare angles roughly, bearing in mind wrap-around
-                const diff = Math.abs(armAngle - bAngle);
-                const pingCondition = diff < 0.2 || diff > Math.PI * 2 - 0.2;
-                
-                if (pingCondition) {
-                    blip.scale.lerp(new THREE.Vector3(1.8, 1.8, 1.8), 0.2);
-                } else {
-                    blip.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
-                }
-            });
-        }
-    });
-
     return (
-        <group>
-            <OrthographicCamera makeDefault position={[0, 10, 0.001]} zoom={1} args={[-5 * aspect, 5 * aspect, 5, -5, 0.1, 100]} />
-            
-            {/* Background Rings */}
-            {rings.map((ring, i) => (
-                <lineLoop key={`ring-${i}`} geometry={ring.geo}>
-                    <lineBasicMaterial color="#00d4ff" opacity={ring.opacity} transparent />
-                </lineLoop>
-            ))}
-
-            {/* Sweep arm */}
-            <group ref={sweepGroupRef}>
-                {sweepLines.map((line, i) => (
-                    <primitive key={`sweep-${i}`} object={new THREE.Line(line.geo, new THREE.LineBasicMaterial({ color: "#00d4ff", opacity: line.opacity, transparent: true }))} />
+        <div className="w-full h-full flex items-center justify-center p-4">
+            <svg viewBox="0 0 250 250" className="w-[220px] h-[220px]">
+                {/* Background Circles */}
+                {[20, 45, 70, 95, 120].map((r, i) => (
+                    <circle 
+                        key={r} 
+                        cx="125" cy="125" r={r} 
+                        fill="none" 
+                        stroke="#00d4ff" 
+                        strokeWidth="0.5" 
+                        strokeDasharray={i === 4 ? "0" : "2,4"}
+                        opacity={0.3 - i * 0.05} 
+                    />
                 ))}
-            </group>
 
-            {/* Blips */}
-            {blipPositions.map((pos, i) => (
-                <mesh key={`blip-${i}`} position={[pos.x, 0, pos.z]} ref={(el) => { blipsRef.current[i] = el; }}>
-                    <sphereGeometry args={[0.12, 16, 16]} />
-                    <meshBasicMaterial color={SEVERITY_COLOR[pos.severity] || '#fff'} />
-                </mesh>
-            ))}
+                {/* Crosshairs */}
+                <line x1="125" y1="5" x2="125" y2="245" stroke="#00d4ff" strokeWidth="0.5" opacity="0.1" />
+                <line x1="5" y1="125" x2="245" y2="125" stroke="#00d4ff" strokeWidth="0.5" opacity="0.1" />
 
-            <EffectComposer>
-                <Bloom intensity={0.9} luminanceThreshold={0.4} mipmapBlur />
-            </EffectComposer>
-        </group>
+                {/* Scanner Arm */}
+                <g transform={`rotate(${sweepAngle}, 125, 125)`}>
+                    <line x1="125" y1="125" x2="125" y2="5" stroke="#00d4ff" strokeWidth="2" strokeLinecap="round">
+                        <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
+                    </line>
+                    <path d="M 125 125 L 125 5 A 120 120 0 0 0 40 40 Z" fill="url(#sweepGradient)" opacity="0.3" />
+                </g>
+
+                {/* Blips */}
+                {blipPositions.map((blip, i) => {
+                    const diff = Math.abs(sweepAngle - blip.angle);
+                    const isScanning = diff < 20 || diff > 340;
+                    const color = SEVERITY_COLOR[blip.severity] || '#fff';
+
+                    return (
+                        <g key={i}>
+                            {isScanning && (
+                                <circle cx={blip.x} cy={blip.y} r="6" fill={color} opacity="0.4">
+                                    <animate attributeName="r" values="3;10;3" dur="1s" repeatCount="indefinite" />
+                                    <animate attributeName="opacity" values="0.4;0;0.4" dur="1s" repeatCount="indefinite" />
+                                </circle>
+                            )}
+                            <circle cx={blip.x} cy={blip.y} r="3" fill={color} stroke="#000" strokeWidth="0.5" shadow-glow="true" />
+                        </g>
+                    );
+                })}
+
+                <defs>
+                    <conicGradient id="sweepGradient" cx="125" cy="125">
+                        <stop offset="0%" stopColor="#00d4ff" stopOpacity="0.6" />
+                        <stop offset="10%" stopColor="#00d4ff" stopOpacity="0" />
+                    </conicGradient>
+                </defs>
+            </svg>
+        </div>
     );
 }
 
@@ -337,9 +310,7 @@ export default function AlertsCenter() {
             
             {/* TOP HEADER SCANNER */}
             <div className="w-full h-[260px] relative border-b border-[#2a2a38] shrink-0 bg-[#0a0a0f]">
-                <Canvas>
-                    <RadarSweep alerts={alerts} />
-                </Canvas>
+                <RadarScanner alerts={alerts} />
                 
                 {/* Overlays */}
                 <div className="absolute top-4 left-6 pointer-events-none">

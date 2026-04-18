@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from sqlalchemy import select, func, text
+from app.db import base # Added for mapper initialization
 from app.db.session import AsyncSessionLocal
 from app.models.user import User
 from app.models.venue import Venue
