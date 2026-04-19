@@ -1,11 +1,11 @@
 import uuid
 from datetime import datetime
-from typing import Any, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List
 
 if TYPE_CHECKING:
-    from .venue import Venue
     from .crowd_snapshot import CrowdSnapshot
     from .queue_entry import QueueEntry
+    from .venue import Venue
 
 from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
