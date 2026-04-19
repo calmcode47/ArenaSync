@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from datetime import datetime, timedelta
+from typing import Any
 
 import aioredis
 from arq.connections import RedisSettings
@@ -105,7 +106,7 @@ class WorkerSettings:
         auto_resolve_stale_alerts,
         send_ml_heartbeat,
     ]
-    cron_jobs = cron_jobs
+    cron_jobs: Any = cron_jobs  # type: ignore[has-type]
 
     # We strip https:// from Upstash REST URL if using native redis connection, or supply specific host mapping
     # Fallback to local mem mapping if ARQ cannot hit REST layer
