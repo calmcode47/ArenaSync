@@ -30,6 +30,7 @@ FROM python:3.11-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PATH="/opt/venv/bin:$PATH"
+ENV MPLCONFIGDIR=/tmp/matplotlib
 
 WORKDIR /app
 
