@@ -16,19 +16,13 @@ branch_labels = None
 depends_on = None
 
 def upgrade() -> None:
-    # Check if the enum type already exists before creating it (defensive for CI/CD)
-    bind = op.get_bind()
-    has_type = bind.execute(
-        sa.text("SELECT 1 FROM pg_type WHERE typname = 'vqueue_status_enum'")
-    ).fetchone()
-
-    vqueue_status_enum = postgresql.ENUM(
-        'waiting', 'called', 'serving', 'completed', 'abandoned',
-        name='vqueue_status_enum'
+    # Create enum type defensively using a Postgres DO block
+    op.execute(
+        "DO $$ BEGIN "
+        "IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'vqueue_status_enum') THEN "
+        "CREATE TYPE vqueue_status_enum AS ENUM ('waiting', 'called', 'serving', 'completed', 'abandoned'); "
+        "END IF; END $$;"
     )
-
-    if not has_type:
-        vqueue_status_enum.create(bind, checkfirst=True)
 
     op.create_table('virtual_queue_entries',
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
@@ -36,7 +30,7 @@ def upgrade() -> None:
         sa.Column('venue_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('position', sa.Integer(), nullable=False),
-        sa.Column('status', vqueue_status_enum, nullable=False, server_default='waiting'),
+        sa.Column('status', postgresql.ENUM('waiting', 'called', 'serving', 'completed', 'abandoned', name='vqueue_status_enum', create_type=False), nullable=False, server_default='waiting'),
         sa.Column('ticket_code', sa.String(length=6), nullable=False),
         sa.Column('estimated_call_time', sa.DateTime(timezone=True), nullable=False),
         sa.Column('called_at', sa.DateTime(timezone=True), nullable=True),
@@ -57,6 +51,4 @@ def downgrade() -> None:
     op.drop_index('ix_vqueue_user_status', table_name='virtual_queue_entries')
     op.drop_index(op.f('ix_virtual_queue_entries_ticket_code'), table_name='virtual_queue_entries')
     op.drop_table('virtual_queue_entries')
-    
-    vqueue_status_enum = postgresql.ENUM('waiting', 'called', 'serving', 'completed', 'abandoned', name='vqueue_status_enum')
-    vqueue_status_enum.drop(op.get_bind())
+    op.execute("DROP TYPE IF EXISTS vqueue_status_enum")
