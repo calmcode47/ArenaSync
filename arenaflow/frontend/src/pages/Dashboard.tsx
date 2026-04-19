@@ -185,7 +185,7 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="w-full min-h-screen bg-[#0a0a0f] overflow-x-hidden selection:bg-[#00d4ff]/30 text-white font-sans relative">
+        <main className="w-full min-h-screen bg-[#0a0a0f] overflow-x-hidden selection:bg-[#00d4ff]/30 text-white font-sans relative">
             
             {/* Global CSS Noise Overlay */}
             <div className="pointer-events-none fixed inset-0 z-50 opacity-[0.03]">
@@ -193,7 +193,7 @@ export default function Dashboard() {
             </div>
 
             {/* SECTION 1: HERO / 3D COMMAND MAP */}
-            <section className="relative h-[100vh] w-full overflow-hidden bg-[radial-gradient(ellipse_at_50%_110%,_#001a2e_0%,_#0a0a0f_60%)]">
+            <section className="relative h-[100vh] w-full overflow-hidden bg-[radial-gradient(ellipse_at_50%_110%,_#001a2e_0%,_#0a0a0f_60%)]" aria-label="Venue 3D Command Map">
                 {/* 3D Scene */}
                 <div className="absolute inset-0">
                     <VenueScene zones={crowdSummary?.zones ?? []} totalCount={crowdSummary?.total_current_count ?? 0} capacity={crowdSummary?.total_capacity ?? 1} />
@@ -294,7 +294,7 @@ export default function Dashboard() {
             </section>
 
             {/* SECTION 2: ZONE COMMAND GRID */}
-            <section className="min-h-screen border-t border-white/5 bg-[repeating-linear-gradient(0deg,_#0a0a0f,_#0a0a0f_3px,_rgba(0,212,255,0.02)_4px)] relative p-8">
+            <section className="min-h-screen border-t border-white/5 bg-[repeating-linear-gradient(0deg,_#0a0a0f,_#0a0a0f_3px,_rgba(0,212,255,0.02)_4px)] relative p-8" aria-label="Sector Status Matrix">
                 <div className="max-w-7xl mx-auto" ref={gridRef}>
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 overflow-hidden">
                         <div>
@@ -331,6 +331,7 @@ export default function Dashboard() {
                                     whileHover={{ scale: 1.02, boxShadow: `0 0 20px ${pColor}20` }}
                                     className="bg-[#1a1a24] border relative p-4 rounded-lg flex flex-col justify-between h-48 cursor-default group"
                                     style={{ borderColor: `${pColor}40` }}
+                                    aria-label={`Zone ${zone.zone_name}, ${zone.congestion_level} congestion, ${zone.current_count} of ${zone.capacity} capacity`}
                                 >
                                     <div className="flex justify-between items-start mb-2">
                                         <div>
@@ -395,7 +396,7 @@ export default function Dashboard() {
             </section>
 
             {/* SECTION 3: INTELLIGENCE PANEL */}
-            <section className="bg-black border-t border-white/10 relative p-8">
+            <section className="bg-black border-t border-white/10 relative p-8" aria-label="Venue Intelligence Metrics">
                 <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
                     
                     {/* LEFT: Chart */}
@@ -501,7 +502,7 @@ export default function Dashboard() {
                     </div>
                 </div>
             </section>
-        </div>
+        </main>
     );
 }
 

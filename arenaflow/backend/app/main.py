@@ -10,6 +10,9 @@ if not hasattr(bcrypt, "__about__"):
         __version__ = bcrypt.__version__
     bcrypt.__about__ = About()
 
+from app.core.logger import setup_logging
+setup_logging()
+
 logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, Request

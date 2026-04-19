@@ -46,8 +46,8 @@ const Navbar = () => {
                     <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-[#00ff88] shadow-[0_0_8px_#00ff88]' : 'bg-[#ff3355] shadow-[0_0_8px_#ff3355]'}`} />
                 </div>
                 
-                <div className="relative cursor-pointer group">
-                    <Bell className="w-6 h-6 text-gray-300 group-hover:text-[#00d4ff] transition-colors" />
+                <div className="relative cursor-pointer group" role="button" aria-label={`Notifications, ${alerts.length} active alerts`}>
+                    <Bell className="w-6 h-6 text-gray-300 group-hover:text-[#00d4ff] transition-colors" aria-hidden="true" />
                     {alerts.length > 0 && (
                         <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#ff3355] rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-[0_0_10px_#ff3355]">
                             {alerts.length > 99 ? '99+' : alerts.length}
@@ -66,17 +66,19 @@ const Navbar = () => {
                         <button 
                             onClick={handleLogout}
                             className="w-8 h-8 rounded bg-[#ff3355]/10 flex items-center justify-center text-[#ff3355] hover:bg-[#ff3355] hover:text-white transition-all border border-[#ff3355]/30 group"
+                            aria-label="Logout"
                             title="Logout"
                         >
-                            <LogOut className="w-4 h-4" />
+                            <LogOut className="w-4 h-4" aria-hidden="true" />
                         </button>
                     </div>
                 ) : (
                     <button 
                         onClick={() => navigate('/login')}
                         className="flex items-center gap-2 px-3 py-1.5 rounded bg-[#00d4ff]/10 border border-[#00d4ff]/30 text-[#00d4ff] hover:bg-[#00d4ff] hover:text-[#0a0a0f] transition-all font-rajdhani text-sm font-bold uppercase tracking-widest"
+                        aria-label="Staff Login"
                     >
-                        <User className="w-4 h-4" />
+                        <User className="w-4 h-4" aria-hidden="true" />
                         Staff Login
                     </button>
                 )}

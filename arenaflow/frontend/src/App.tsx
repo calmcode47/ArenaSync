@@ -81,8 +81,8 @@ function VenueSelectorModal() {
     const [isExpandedAuth, setIsExpandedAuth] = useState(false);
     
     // Auth logic
-    const [email, setEmail] = useState(import.meta.env.VITE_DEMO_EMAIL || "");
-    const [password, setPassword] = useState(import.meta.env.VITE_DEMO_PASSWORD || "");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
 
     if (venueId) return null;
 
