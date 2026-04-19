@@ -16,9 +16,19 @@ branch_labels = None
 depends_on = None
 
 def upgrade() -> None:
-    # create enum
-    vqueue_status_enum = postgresql.ENUM('waiting', 'called', 'serving', 'completed', 'abandoned', name='vqueue_status_enum')
-    vqueue_status_enum.create(op.get_bind(), checkfirst=True)
+    # Check if the enum type already exists before creating it (defensive for CI/CD)
+    bind = op.get_bind()
+    has_type = bind.execute(
+        sa.text("SELECT 1 FROM pg_type WHERE typname = 'vqueue_status_enum'")
+    ).fetchone()
+
+    vqueue_status_enum = postgresql.ENUM(
+        'waiting', 'called', 'serving', 'completed', 'abandoned',
+        name='vqueue_status_enum'
+    )
+
+    if not has_type:
+        vqueue_status_enum.create(bind, checkfirst=True)
 
     op.create_table('virtual_queue_entries',
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
