@@ -49,5 +49,5 @@ options:
 substitutions:
   _REGION: europe-west1
   _AR_REPO: arenaflow
-  _SERVICE: arenaflow
+  _SERVICE: arenaflow-backend
   _TAG: v1.0.0
