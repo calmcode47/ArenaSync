@@ -76,7 +76,11 @@ jobs:
           python-version: '3.11'
       - run: cd arenaflow/backend && pip install -r requirements.txt --quiet
       - run: cd arenaflow/backend && python -m alembic upgrade head
+        env:
+          PYTHONPATH: .
       - run: cd arenaflow/backend && pytest tests/ -v --tb=short --asyncio-mode=auto -m "not integration"
+        env:
+          PYTHONPATH: .
 
   frontend-build:
     runs-on: ubuntu-latest
