@@ -33,7 +33,7 @@ fi
 # Step 1: Install dependencies
 echo "[ 1/3 ] Installing frontend dependencies..."
 cd frontend
-npm ci --silent
+npm ci --silent --legacy-peer-deps
 
 # Step 2: Build
 echo "[ 2/3 ] Building production bundle..."
