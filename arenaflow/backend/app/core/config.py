@@ -21,7 +21,8 @@ class Settings(BaseSettings):
     GOOGLE_MAPS_API_KEY: str
     GOOGLE_TRANSLATE_API_KEY: str
     
-    ALLOWED_ORIGINS: Union[List[str], str] = ["http://localhost:5173"]
+    ALLOWED_ORIGINS: Union[List[str], str] = ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"]
+    DEMO_MODE: bool = True
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod

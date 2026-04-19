@@ -49,6 +49,10 @@ async def login(
     db: AsyncSession = Depends(get_db)
 ) -> Any:
     """Login and get a JWT."""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Login attempt for: {form_data.username}")
+    
     result = await db.execute(select(User).where(User.email == form_data.username))
     user = result.scalars().first()
     if not user or not verify_password(form_data.password, user.hashed_password):

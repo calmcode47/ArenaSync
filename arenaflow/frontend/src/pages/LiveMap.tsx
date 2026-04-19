@@ -4,7 +4,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { RefreshCw, MapPin, Zap } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -107,23 +107,54 @@ const CONGESTION_COLOR_MAP: Record<string, string> = {
 // Custom Marker Creator
 const createCustomIcon = (color: string) => L.divIcon({
     html: `
-        <div style="position:relative; width:20px; height:20px;">
-            <div style="position:absolute; inset:0; background:${color}; border-radius:50%; opacity:0.4; animation: ping 1.5s infinite;"></div>
-            <div style="position:absolute; inset:4px; background:${color}; border-radius:50%; border:2px solid #000;"></div>
+        <div style="position:relative; width:24px; height:24px;">
+            <div style="position:absolute; inset:0; background:${color}; border-radius:50%; opacity:0.6; animation: ping 2s infinite;"></div>
+            <div style="position:absolute; inset:6px; background:${color}; border-radius:50%; border:3px solid #000; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>
         </div>
     `,
     className: '',
-    iconSize: [20, 20],
-    iconAnchor: [10, 10]
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
 });
 
 // Map Panner Component
 function MapController({ center, zoom }: { center: [number, number], zoom: number }) {
     const map = useMap();
     useEffect(() => {
-        map.flyTo(center, zoom, { duration: 1.5 });
+        if (center[0] !== 0) {
+            map.flyTo(center, zoom, { duration: 1.5, easeLinearity: 0.25 });
+        }
     }, [center, zoom, map]);
     return null;
+}
+
+// Custom Heatmap Layer (CSS-based)
+function HeatmapLayer({ points }: { points: any[] }) {
+    if (!points || points.length === 0) return null;
+    
+    // Simple helper to get color from weight (0 to 1)
+    const getHeatColor = (w: number) => {
+        if (w > 0.8) return '#ff3355'; // Critical Red
+        if (w > 0.5) return '#ffb300'; // High Orange
+        return '#00ff88'; // Low Green
+    };
+
+    return (
+        <>
+            {points.map((p, i) => (
+                <CircleMarker
+                    key={`heat-${i}`}
+                    center={[p.latitude, p.longitude]}
+                    radius={20}
+                    pathOptions={{
+                        fillColor: getHeatColor(p.weight),
+                        fillOpacity: p.weight * 0.35,
+                        stroke: false
+                    }}
+                />
+            ))}
+        </>
+    );
 }
 
 // ------------------------------------------------------------------
@@ -131,7 +162,7 @@ function MapController({ center, zoom }: { center: [number, number], zoom: numbe
 // ------------------------------------------------------------------
 export default function LiveMap() {
     const { venueId, venue } = useVenueStore();
-    const { summary, isLoading, refetch } = useCrowd(venueId);
+    const { summary, heatmap, isLoading, refetch } = useCrowd(venueId);
     
     const [showGlobe, setShowGlobe] = useState(false);
     const [introText, setIntroText] = useState("ACQUIRING VENUE COORDINATES...");
@@ -240,6 +271,9 @@ export default function LiveMap() {
                     <TileLayer url={DARK_TILES} attribution={ATTRIBUTION} />
                     <ZoomControl position="bottomright" />
                     <MapController center={mapState.center} zoom={mapState.zoom} />
+                    
+                    {/* Heatmap Layer */}
+                    <HeatmapLayer points={heatmap?.points || []} />
 
                     {summary?.zones?.map((zone) => (
                         <Marker 

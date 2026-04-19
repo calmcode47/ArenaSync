@@ -20,3 +20,7 @@ export const getAlertById = async (alertId: string): Promise<Alert> => {
     const res = await apiClient.get(`/alerts/${alertId}`);
     return res.data;
 };
+
+export const deleteAlert = async (alertId: string): Promise<void> => {
+    await apiClient.delete(`/alerts/${alertId}`);
+};

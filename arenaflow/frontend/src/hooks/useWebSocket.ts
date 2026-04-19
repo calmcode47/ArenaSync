@@ -79,6 +79,10 @@ export function useWebSocket(venueId: string | null) {
                         useAlertStore.getState().clearAlert(msg.data.alert_id);
                         queryClient.invalidateQueries({ queryKey: ["alerts", venueId] });
                         break;
+                    case "alert_deleted":
+                        useAlertStore.getState().clearAlert(msg.data.alert_id);
+                        queryClient.invalidateQueries({ queryKey: ["alerts", venueId] });
+                        break;
                     case "queue_called":
                         useAlertStore.getState().addAlert({
                             id: msg.data.ticket_code,

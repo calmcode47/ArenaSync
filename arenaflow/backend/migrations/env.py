@@ -16,7 +16,8 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-config.set_main_option("sqlalchemy.url", settings.alembic_url)
+# Correctly escape percent signs for ConfigParser interpolation
+config.set_main_option("sqlalchemy.url", settings.alembic_url.replace("%", "%%"))
 
 def run_migrations_offline() -> None:
     url = config.get_main_option("sqlalchemy.url")

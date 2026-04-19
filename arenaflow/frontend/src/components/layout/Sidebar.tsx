@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Map, Clock, Bell, Info } from 'lucide-react';
+import { LayoutDashboard, Map, Clock, Bell, Info, UtensilsCrossed } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Sidebar = () => {
@@ -11,6 +11,7 @@ const Sidebar = () => {
         { path: '/map', label: 'Live Map', icon: Map },
         { path: '/queue', label: 'Queue Intelligence', icon: Clock },
         { path: '/alerts', label: 'Alerts Center', icon: Bell },
+        { path: '/food', label: 'Food & Drinks', icon: UtensilsCrossed },
         { path: '/about', label: 'About', icon: Info },
     ];
 

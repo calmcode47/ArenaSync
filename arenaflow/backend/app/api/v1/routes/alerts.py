@@ -70,10 +70,9 @@ async def delete_alert(
     db: AsyncSession = Depends(get_db)
 ) -> Response:
     """Delete an alert completely from the system (Admin only)."""
-    alert = await db.get(Alert, alert_id)
-    if not alert:
+    service = AlertService(db)
+    success = await service.delete_alert(alert_id)
+    if not success:
         raise HTTPException(status_code=404, detail="Alert not found")
         
-    await db.delete(alert)
-    await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

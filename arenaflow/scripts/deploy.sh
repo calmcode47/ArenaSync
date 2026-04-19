@@ -16,10 +16,12 @@ echo "  Region:  $REGION"
 echo "  Service: $SERVICE_NAME"
 echo ""
 
+SHORT_SHA=$(git rev-parse --short HEAD || echo "manual")
+
 gcloud builds submit \
   --project="$PROJECT_ID" \
   --config=cloudbuild.yaml \
-  --substitutions="_REGION=$REGION,_AR_REPO=$AR_REPO,_SERVICE=$SERVICE_NAME" \
+  --substitutions="_REGION=$REGION,_AR_REPO=$AR_REPO,_SERVICE=$SERVICE_NAME,SHORT_SHA=$SHORT_SHA" \
   .
 
 echo ""

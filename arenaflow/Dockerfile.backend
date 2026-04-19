@@ -16,8 +16,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirements from backend directory
 COPY backend/requirements.txt .
 
-# Install dependencies to user local to copy over simply
-RUN pip install --user --no-cache-dir -r requirements.txt
+# Create a virtualenv to encapsulate dependencies
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install dependencies into the virtual environment
+RUN pip install --no-cache-dir -r requirements.txt
 
 
 # Stage 2: runtime
@@ -25,7 +29,7 @@ FROM python:3.11-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PATH=/root/.local/bin:$PATH
+ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
 
@@ -36,7 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy installed packages from builder
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code from backend directory (build context: repo root)
 COPY backend/app/ ./app/
@@ -59,4 +63,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 # 1. Run migrations
 # 2. Start Uvicorn respecting $PORT (injected by Cloud Run)
 # 3. workers 1 is optimized for Cloud Run horizontal scaling
-CMD ["sh", "-c", "python -m alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --log-level info"]
+CMD ["sh", "-c", "/opt/venv/bin/python -m alembic upgrade head && /opt/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --log-level info"]

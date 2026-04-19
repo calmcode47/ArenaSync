@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Users, Clock, AlertTriangle, CloudRain, Info, UserPlus, Bell, Globe, 
-    ShieldAlert, Check, Lock
+    ShieldAlert, Check, Lock, Trash2
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 import { useAlerts } from '../hooks/useAlerts';
 import { useAlertStore } from '../store/alertStore';
@@ -121,7 +122,7 @@ function RadarScanner({ alerts }: { alerts: any[] }) {
 // ------------------------------------------------------------------
 // TIMELINE CARD COMPONENT
 // ------------------------------------------------------------------
-function AlertTimelineCard({ alert, resolveFn }: { alert: any, resolveFn: (id: string) => void }) {
+function AlertTimelineCard({ alert, resolveFn, deleteFn }: { alert: any, resolveFn: (id: string) => void, deleteFn: (id: string) => void }) {
     const [expandedTranslations, setExpandedTranslations] = useState(false);
     const [selectedLang, setSelectedLang] = useState('ES');
     const langs = ['ES', 'FR', 'DE', 'HI', 'ZH', 'PT', 'AR'];
@@ -223,14 +224,32 @@ function AlertTimelineCard({ alert, resolveFn }: { alert: any, resolveFn: (id: s
                     <div>
                         {alert.fcm_sent && <span className="inline-flex items-center gap-1 text-[9px] text-[#00ff88] uppercase tracking-wider bg-[#00ff88]/10 px-1.5 py-0.5 rounded"><Bell size={9} /> PUSH SENT</span>}
                     </div>
-                    <div>
+                    <div className="flex items-center gap-2">
                         {isResolved ? (
                             <span className="text-[10px] text-gray-500 uppercase tracking-widest flex items-center gap-1"><Check size={11} /> RESOLVED</span>
                         ) : (
-                            <button onClick={() => resolveFn(alert.id)} className="text-[10px] text-[#ff3355] border border-[#ff3355]/40 hover:bg-[#ff3355]/10 px-2 py-0.5 rounded uppercase tracking-widest transition">
+                            <button 
+                                onClick={() => {
+                                    resolveFn(alert.id);
+                                    toast.success('Alert marked as resolved');
+                                }} 
+                                className="text-[10px] text-[#00ff88] border border-[#00ff88]/40 hover:bg-[#00ff88]/10 px-2 py-0.5 rounded uppercase tracking-widest transition"
+                            >
                                 RESOLVE ✓
                             </button>
                         )}
+                        <button 
+                            onClick={() => {
+                                if (window.confirm('Delete this alert permanently?')) {
+                                    deleteFn(alert.id);
+                                    toast.success('Alert deleted from Supabase');
+                                }
+                            }}
+                            className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded transition"
+                            title="Delete Permanently"
+                        >
+                            <Trash2 size={13} />
+                        </button>
                     </div>
                 </div>
 
@@ -248,7 +267,7 @@ export default function AlertsCenter() {
     const userRole = "admin"; 
     
     const queryClient = useQueryClient();
-    const { alerts, isLoading, resolveAlert } = useAlerts(venueId);
+    const { alerts, isLoading, resolveAlert, deleteAlert } = useAlerts(venueId);
     useWebSocket(venueId);
     
     // For Zone Dropdown mapping
@@ -297,9 +316,10 @@ export default function AlertsCenter() {
             setSeverity('medium');
             setAlertType('info');
             setZoneId('');
-            queryClient.invalidateQueries({ queryKey: ["alerts", venueId] });
+            toast.success('Alert broadcasted successfully');
         } catch (err) {
             console.error("Failed to broadcast alert", err);
+            toast.error('Failed to broadcast alert');
         } finally {
             setIsSubmitting(false);
         }
@@ -490,7 +510,7 @@ export default function AlertsCenter() {
                         ) : (
                             <AnimatePresence mode="popLayout">
                                 {sortedAlerts.map(a => (
-                                    <AlertTimelineCard key={a.id} alert={a} resolveFn={resolveAlert} />
+                                    <AlertTimelineCard key={a.id} alert={a} resolveFn={resolveAlert} deleteFn={deleteAlert} />
                                 ))}
                             </AnimatePresence>
                         )}

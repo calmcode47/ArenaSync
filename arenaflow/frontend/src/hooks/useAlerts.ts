@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getActiveAlerts, resolveAlert } from '../api/alerts';
+import { getActiveAlerts, resolveAlert, deleteAlert } from '../api/alerts';
 import { useAlertStore } from '../store/alertStore';
 import { useMemo } from 'react';
 
@@ -23,6 +23,13 @@ export function useAlerts(venueId: string | null) {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (alertId: string) => deleteAlert(alertId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["alerts", venueId] });
+    }
+  });
+
   const wsAlerts = useAlertStore(state => state.alerts);
   
   const mergedAlerts = useMemo(() => {
@@ -41,5 +48,7 @@ export function useAlerts(venueId: string | null) {
     isLoading: alertsQuery.isLoading,
     resolveAlert: resolveMutation.mutate,
     isResolving: resolveMutation.isPending,
+    deleteAlert: deleteMutation.mutate,
+    isDeleting: deleteMutation.isPending,
   };
 }

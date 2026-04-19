@@ -106,21 +106,31 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONRe
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    # Convert body to string if it's not JSON serializable (like FormData)
+    body = exc.body
+    if not isinstance(body, (str, dict, list, int, float, bool, type(None))):
+        body = str(body)
+        
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.warning(f"Validation error: {exc.errors()}\nBody: {body}")
+        
     return JSONResponse(
         status_code=422,
-        content={"detail": exc.errors(), "body": exc.body}
+        content={"detail": exc.errors(), "body": body}
     )
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.error(f"Global error caught: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal server error"}
+        content={"detail": f"Internal server error: {str(exc)}"}
     )
 
 # Placeholders for future routers
 # from app.api.v1 import routes as v1_routes
-from app.api.v1.routes import alerts, auth, crowd, health, maps, ml, queue, virtual_queue
+from app.api.v1.routes import alerts, auth, crowd, health, maps, ml, queue, virtual_queue, food
 from app.websocket import handlers as websocket_handlers
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
@@ -130,5 +140,6 @@ app.include_router(queue.router, prefix="/api/v1/queue", tags=["Queue"])
 app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["Alerts"])
 app.include_router(virtual_queue.router, prefix="/api/v1/vqueue", tags=["Virtual Queue"])
 app.include_router(ml.router, prefix="/api/v1/ml", tags=["Machine Learning"])
+app.include_router(food.router, prefix="/api/v1/food", tags=["Food & Beverage"])
 app.include_router(health.router, prefix="/health", tags=["Health"])
 app.include_router(websocket_handlers.router, prefix="/ws", tags=["WebSocket"])

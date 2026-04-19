@@ -5,16 +5,14 @@ from sqlalchemy.orm import declarative_base
 
 from app.core.config import settings
 
+from sqlalchemy.pool import NullPool
+
 engine = create_async_engine(
     settings.DATABASE_URL,
-    pool_size=5,              # Supabase free tier: max 60 connections, be conservative
-    max_overflow=10,
-    pool_timeout=30,
-    pool_recycle=300,         # Recycle connections every 5 min (Supabase closes idle at 6min)
-    pool_pre_ping=True,       # Verify connection health before use
+    poolclass=NullPool,
     echo=settings.APP_ENV == "development",
     connect_args={
-        "prepared_statement_cache_size": 0,   # Required for PgBouncer transaction mode
+        "statement_cache_size": 0,            # Required for PgBouncer transaction mode
         "server_settings": {
             "jit": "off"                      # Disable JIT for PgBouncer compatibility
         }

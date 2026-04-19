@@ -25,7 +25,7 @@ apiClient.interceptors.response.use(
         if (error.response?.status === 401) {
             localStorage.removeItem("arenaflow_token");
             localStorage.removeItem("arenaflow_venue_id");
-            window.location.href = "/dashboard";
+            console.warn("[API] Session expired or unauthorized. Please log in.");
         } else if (error.response?.status === 422) {
             console.error("[API] Validation error:", error.response.data.detail);
         } else if (!error.response) {

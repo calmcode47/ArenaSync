@@ -29,6 +29,8 @@ class ZoneCrowdStatus(BaseModel):
     congestion_level: str
     current_count: int
     capacity: int
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 class VenueCrowdSummary(BaseModel):
     venue_id: UUID

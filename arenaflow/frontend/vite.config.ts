@@ -21,25 +21,12 @@ export default defineConfig({
   },
 
   build: {
-    target: "esnext",
+    target: "es2020",
     minify: "esbuild",
     sourcemap: false,    // disable sourcemaps to minimize bundle size
     chunkSizeWarningLimit: 2000,
 
     rollupOptions: {
-      output: {
-        manualChunks: {
-          // Split vendor bundles to enable parallel browser downloads
-          "three-core":    ["three"],
-          "three-r3f":     ["@react-three/fiber", "@react-three/drei"],
-          "three-post":    ["@react-three/postprocessing"],
-          "recharts":      ["recharts"],
-          "google-maps":   ["@react-google-maps/api"],
-          "motion":        ["framer-motion"],
-          "query":         ["@tanstack/react-query"],
-          "vendor":        ["react", "react-dom", "react-router-dom", "axios", "zustand"]
-        }
-      },
       external: [],
     }
   },
@@ -53,7 +40,7 @@ export default defineConfig({
   },
 
   esbuild: {
-    target: "esnext",
+    target: "es2020",
     legalComments: "none"
   }
 });

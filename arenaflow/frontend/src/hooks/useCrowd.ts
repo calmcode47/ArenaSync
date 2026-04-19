@@ -6,8 +6,8 @@ export function useCrowd(venueId: string | null) {
     queryKey: ["crowd", "summary", venueId],
     queryFn: () => getCrowdSummary(venueId!),
     enabled: !!venueId,
-    staleTime: 10_000,
-    refetchInterval: 15_000,
+    staleTime: 5_000,
+    refetchInterval: 10_000,
     retry: 2,
     retryDelay: 3000,
   });

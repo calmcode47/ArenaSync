@@ -1,13 +1,20 @@
 import React from 'react';
-import { Bell, Activity } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, Activity, User, LogOut } from 'lucide-react';
 import { useVenueStore } from '../../store/venueStore';
 import { useAlertStore } from '../../store/alertStore';
 import { useWebSocket } from '../../hooks/useWebSocket';
 
 const Navbar = () => {
-    const { venue, venueId } = useVenueStore();
+    const navigate = useNavigate();
+    const { venue, venueId, currentUser, setCurrentUser } = useVenueStore();
     const alerts = useAlertStore((state) => state.alerts);
     const { isConnected } = useWebSocket(venueId);
+
+    const handleLogout = () => {
+        localStorage.removeItem("arenaflow_token");
+        setCurrentUser(null);
+    };
 
     return (
         <nav className="h-16 w-full bg-[#1a1a24]/80 backdrop-blur-md border-b border-[#00d4ff]/20 flex items-center justify-between px-6 z-50 shrink-0 shadow-[0_0_15px_rgba(0,212,255,0.1)]">
@@ -47,6 +54,32 @@ const Navbar = () => {
                         </div>
                     )}
                 </div>
+
+                <div className="h-8 w-[1px] bg-white/10 mx-2" />
+
+                {currentUser ? (
+                    <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] text-gray-500 font-mono tracking-widest uppercase">{currentUser.role}</span>
+                            <span className="text-xs font-rajdhani font-bold text-white uppercase">{currentUser.email.split('@')[0]}</span>
+                        </div>
+                        <button 
+                            onClick={handleLogout}
+                            className="w-8 h-8 rounded bg-[#ff3355]/10 flex items-center justify-center text-[#ff3355] hover:bg-[#ff3355] hover:text-white transition-all border border-[#ff3355]/30 group"
+                            title="Logout"
+                        >
+                            <LogOut className="w-4 h-4" />
+                        </button>
+                    </div>
+                ) : (
+                    <button 
+                        onClick={() => navigate('/login')}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded bg-[#00d4ff]/10 border border-[#00d4ff]/30 text-[#00d4ff] hover:bg-[#00d4ff] hover:text-[#0a0a0f] transition-all font-rajdhani text-sm font-bold uppercase tracking-widest"
+                    >
+                        <User className="w-4 h-4" />
+                        Staff Login
+                    </button>
+                )}
             </div>
         </nav>
     );

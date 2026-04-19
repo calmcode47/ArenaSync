@@ -36,7 +36,7 @@ steps:
       - '--cpu=1'
       - '--timeout=300'
       - '--concurrency=80'
-      - '--set-env-vars=APP_ENV=production'
+      - '--update-env-vars=APP_ENV=production'
 
 images:
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/backend:${SHORT_SHA}'

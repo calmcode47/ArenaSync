@@ -15,27 +15,37 @@ else:
 async def get_cached(key: str) -> Optional[Any]:
     if not redis:
         return None
-    data = await redis.get(key)
-    if not data:
-        return None
     try:
+        data = await redis.get(key)
+        if not data:
+            return None
         return orjson.loads(data)
-    except (orjson.JSONDecodeError, TypeError):
-        return data
+    except Exception as e:
+        logger.warning(f"Redis GET failed for {key}: {e}")
+        return None
 
 async def set_cached(key: str, value: Any, ttl_seconds: int = 300) -> None:
     if not redis:
         return
-    serialized = orjson.dumps(value).decode("utf-8")
-    await redis.set(key, serialized, ex=ttl_seconds)
+    try:
+        serialized = orjson.dumps(value).decode("utf-8")
+        await redis.set(key, serialized, ex=ttl_seconds)
+    except Exception as e:
+        logger.warning(f"Redis SET failed for {key}: {e}")
 
 async def invalidate(key: str) -> None:
     if not redis:
         return
-    await redis.delete(key)
+    try:
+        await redis.delete(key)
+    except Exception as e:
+        logger.warning(f"Redis DELETE failed for {key}: {e}")
 
 async def publish_event(channel: str, payload: dict) -> None:
     if not redis:
         return
-    serialized = orjson.dumps(payload).decode("utf-8")
-    await redis.publish(channel, serialized)
+    try:
+        serialized = orjson.dumps(payload).decode("utf-8")
+        await redis.publish(channel, serialized)
+    except Exception as e:
+        logger.warning(f"Redis PUBLISH failed on {channel}: {e}")

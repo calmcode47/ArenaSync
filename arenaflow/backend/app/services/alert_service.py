@@ -11,6 +11,7 @@ from app.schemas.alert import AlertCreate, AlertOut, AlertBroadcast
 from app.services.translate_service import TranslateService
 from app.core.redis_client import publish_event
 from app.core.firebase import send_fcm_notification
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -82,8 +83,20 @@ class AlertService:
             timestamp=out.created_at
         )
         
-        await publish_event(f"alerts:{str(data.venue_id)}", broadcast_data.model_dump(mode="json"))
+        await publish_event(f"alerts:{str(data.venue_id)}", broadcast_data.model_dump(mode="json"), event_type="alert_created")
         return out
+
+    async def delete_alert(self, alert_id: UUID) -> bool:
+        alert = await self.db.get(Alert, alert_id)
+        if not alert:
+            return False
+        
+        venue_id = alert.venue_id
+        await self.db.delete(alert)
+        await self.db.commit()
+        
+        await publish_event(f"alerts:{str(venue_id)}", {"alert_id": str(alert_id)}, event_type="alert_deleted")
+        return True
 
     async def _get_staff_fcm_tokens(self, venue_id: UUID) -> list[str]:
         """Fetch non-null FCM tokens for all active staff and admin users."""
@@ -119,6 +132,38 @@ class AlertService:
         res = await self.db.execute(stmt)
         alerts = res.scalars().all()
         return [AlertOut.model_validate(a) for a in alerts]
+
+    def _get_mock_alerts(self, venue_id: UUID) -> list[AlertOut]:
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        return [
+            AlertOut(
+                id=UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                venue_id=venue_id,
+                zone_id=UUID("33333333-3333-3333-3333-333333333333"),
+                alert_type="overcrowding",
+                severity="critical",
+                title="Critical Congestion: Section 108",
+                message="Section 108 has reached 92% capacity. Please redirect incoming attendees to neighboring sections.",
+                translated_messages={},
+                is_resolved=False,
+                fcm_sent=True,
+                created_at=now
+            ),
+            AlertOut(
+                id=UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+                venue_id=venue_id,
+                zone_id=UUID("11111111-1111-1111-1111-111111111111"),
+                alert_type="long_queue",
+                severity="medium",
+                title="Main Entrance Delay",
+                message="Wait times at Main Entrance have exceeded 15 minutes. Heavy initial flow detected.",
+                translated_messages={},
+                is_resolved=False,
+                fcm_sent=False,
+                created_at=now
+            )
+        ]
 
     async def auto_alert_from_crowd(self, zone_id: UUID, venue_id: UUID, congestion_level: str) -> None:
         if congestion_level not in ["high", "critical"]:
