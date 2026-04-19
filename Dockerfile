@@ -1,0 +1,64 @@
+# Stage 1: builder
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /build
+
+# Install build dependencies for logic like asyncpg C extensions
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    python3-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements from backend directory
+COPY arenaflow/backend/requirements.txt .
+
+# Create a virtualenv to encapsulate dependencies
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install dependencies into the virtual environment
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+# Stage 2: runtime
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/opt/venv/bin:$PATH"
+ENV MPLCONFIGDIR=/tmp/matplotlib
+
+WORKDIR /app
+
+# Install runtime libpq (needed by asyncpg) and curl for healthchecks
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    curl \
+ && rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder
+COPY --from=builder /opt/venv /opt/venv
+
+# Copy application code from backend directory
+COPY arenaflow/backend/app/ ./app/
+COPY arenaflow/backend/migrations/ ./migrations/
+COPY arenaflow/backend/alembic.ini .
+
+# Create non-root user for security
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser \
+    && chown -R appuser:appgroup /app
+
+USER appuser
+
+EXPOSE 8000
+
+# Healthcheck for Cloud Run
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
+
+# Start command
+CMD ["sh", "-c", "/opt/venv/bin/python -m alembic stamp 0002 && /opt/venv/bin/python -m alembic upgrade head && /opt/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --log-level info"]
