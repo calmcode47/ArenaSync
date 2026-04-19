@@ -49,11 +49,17 @@ async def invalidate(key: str) -> None:
         logger.warning(f"Redis DELETE failed for {key}: {e}")
 
 
-async def publish_event(channel: str, payload: dict) -> None:
+async def publish_event(
+    channel: str, payload: dict, event_type: Optional[str] = None
+) -> None:
     if not redis:
         return
     try:
-        serialized = orjson.dumps(payload).decode("utf-8")
+        final_payload = payload
+        if event_type:
+            final_payload = {"type": event_type, "data": payload}
+
+        serialized = orjson.dumps(final_payload).decode("utf-8")
         await redis.publish(channel, serialized)
     except Exception as e:
         logger.warning(f"Redis PUBLISH failed on {channel}: {e}")
