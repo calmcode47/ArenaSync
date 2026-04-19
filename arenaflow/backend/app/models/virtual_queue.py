@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, List, Optional
 if TYPE_CHECKING:
     from .user import User
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, Integer, String, func
 from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.session import Base
