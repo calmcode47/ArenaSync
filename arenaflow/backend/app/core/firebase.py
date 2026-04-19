@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # Module-level executor for sync Firebase Admin SDK calls
 executor = ThreadPoolExecutor(max_workers=4)
 
+
 def _initialize_firebase() -> Optional[firebase_admin.App]:
     """Initialize Firebase Admin SDK with base64 or path-based credentials."""
     # Double-init guard
@@ -24,7 +25,9 @@ def _initialize_firebase() -> Optional[firebase_admin.App]:
 
     project_id = getattr(settings, "FIREBASE_PROJECT_ID", None)
     if not project_id:
-        logger.warning("FIREBASE_PROJECT_ID not set. Firebase functions will be no-ops.")
+        logger.warning(
+            "FIREBASE_PROJECT_ID not set. Firebase functions will be no-ops."
+        )
         return None
 
     cred_path = None
@@ -38,7 +41,9 @@ def _initialize_firebase() -> Optional[firebase_admin.App]:
             with open(temp_path, "wb") as f:
                 f.write(cred_content)
             cred_path = temp_path
-            logger.info("Firebase: Using credentials decoded from FIREBASE_CREDENTIALS_BASE64.")
+            logger.info(
+                "Firebase: Using credentials decoded from FIREBASE_CREDENTIALS_BASE64."
+            )
         except Exception as e:
             logger.error(f"Firebase: Failed to decode base64 credentials: {e}")
 
@@ -52,9 +57,12 @@ def _initialize_firebase() -> Optional[firebase_admin.App]:
     if cred_path:
         try:
             cred = credentials.Certificate(cred_path)
-            app = firebase_admin.initialize_app(cred, {
-                'projectId': project_id,
-            })
+            app = firebase_admin.initialize_app(
+                cred,
+                {
+                    "projectId": project_id,
+                },
+            )
             logger.info("Firebase Admin SDK successfully initialized.")
             return app
         except Exception as e:
@@ -63,6 +71,7 @@ def _initialize_firebase() -> Optional[firebase_admin.App]:
         logger.warning("Firebase: No credentials provided. SDK functionality disabled.")
 
     return None
+
 
 # Global Firebase app instance
 firebase_app = _initialize_firebase()
@@ -74,6 +83,7 @@ class FirebaseClient:
 
 
 firebase_client = FirebaseClient()
+
 
 async def verify_firebase_token(id_token: str) -> Optional[Dict[str, Any]]:
     """
@@ -87,19 +97,16 @@ async def verify_firebase_token(id_token: str) -> Optional[Dict[str, Any]]:
         loop = asyncio.get_event_loop()
         # verify_id_token is a sync call
         decoded_token = await loop.run_in_executor(
-            executor,
-            lambda: auth.verify_id_token(id_token, check_revoked=True)
+            executor, lambda: auth.verify_id_token(id_token, check_revoked=True)
         )
         return decoded_token
     except Exception as e:
         logger.debug(f"Firebase: Token verification failed: {e}")
         return None
 
+
 async def send_fcm_notification(
-    fcm_token: str,
-    title: str,
-    body: str,
-    data: Optional[Dict[str, str]] = None
+    fcm_token: str, title: str, body: str, data: Optional[Dict[str, str]] = None
 ) -> bool:
     """
     Send push notification via FCM.
@@ -119,10 +126,7 @@ async def send_fcm_notification(
         )
 
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(
-            executor,
-            lambda: messaging.send(message)
-        )
+        await loop.run_in_executor(executor, lambda: messaging.send(message))
         return True
     except messaging.UnregisteredError:
         logger.debug(f"FCM: Token expired/unregistered: {fcm_token[:20]}...")
@@ -133,6 +137,7 @@ async def send_fcm_notification(
     except Exception as e:
         logger.warning(f"FCM: Failed to send notification: {e}")
         return False
+
 
 async def register_fcm_token(user_id: str, fcm_token: str) -> None:
     """
@@ -148,11 +153,13 @@ async def register_fcm_token(user_id: str, fcm_token: str) -> None:
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(
             executor,
-            lambda: doc_ref.set({
-                "token": fcm_token,
-                "user_id": user_id,
-                "updated_at": datetime.now(timezone.utc)
-            })
+            lambda: doc_ref.set(
+                {
+                    "token": fcm_token,
+                    "user_id": user_id,
+                    "updated_at": datetime.now(timezone.utc),
+                }
+            ),
         )
         logger.info(f"FCM: Registered token for user {user_id}")
     except Exception as e:

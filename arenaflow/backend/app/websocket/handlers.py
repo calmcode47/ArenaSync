@@ -16,17 +16,15 @@ from app.websocket.manager import manager
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-ALLOWED_WS_ORIGINS = [
-    origin.strip()
-    for origin in settings.ALLOWED_ORIGINS
-]
+ALLOWED_WS_ORIGINS = [origin.strip() for origin in settings.ALLOWED_ORIGINS]
+
 
 @router.websocket("/{venue_id}")
 async def websocket_endpoint(
     websocket: WebSocket,
     venue_id: str,
     token: str = Query(...),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     # Validate origin header
     origin = websocket.headers.get("origin", "")
@@ -64,10 +62,14 @@ async def websocket_endpoint(
         crowd_summary = await crowd_service.get_venue_summary(venue_uuid)
         active_alerts = await alert_service.get_active_alerts(venue_uuid)
 
-        await manager.send_personal(websocket, "initial_state", {
-            "crowd": crowd_summary.model_dump(mode="json"),
-            "alerts": [a.model_dump(mode="json") for a in active_alerts]
-        })
+        await manager.send_personal(
+            websocket,
+            "initial_state",
+            {
+                "crowd": crowd_summary.model_dump(mode="json"),
+                "alerts": [a.model_dump(mode="json") for a in active_alerts],
+            },
+        )
     except Exception as e:
         logger.error(f"Error fetching initial state: {e}")
 
@@ -106,7 +108,9 @@ async def websocket_endpoint(
                     last_pong_time = loop.time()
                 elif event_type == "crowd_update":
                     # staff update handler
-                    await manager.broadcast_to_venue(venue_id, "crowd_update", payload.get("data", {}))
+                    await manager.broadcast_to_venue(
+                        venue_id, "crowd_update", payload.get("data", {})
+                    )
 
             except orjson.JSONDecodeError:
                 logger.warning("Received invalid JSON on websocket")

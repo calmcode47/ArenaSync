@@ -12,7 +12,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     DATABASE_URL: str
-    DATABASE_MIGRATION_URL: str | None = None  # Used by Alembic only; falls back to DATABASE_URL if not set
+    DATABASE_MIGRATION_URL: str | None = (
+        None  # Used by Alembic only; falls back to DATABASE_URL if not set
+    )
 
     UPSTASH_REDIS_REST_URL: str
     UPSTASH_REDIS_REST_TOKEN: str
@@ -23,7 +25,12 @@ class Settings(BaseSettings):
     GOOGLE_MAPS_API_KEY: str
     GOOGLE_TRANSLATE_API_KEY: str
 
-    ALLOWED_ORIGINS: Union[List[str], str] = ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"]
+    ALLOWED_ORIGINS: Union[List[str], str] = [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+    ]
     DEMO_MODE: bool = True
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
@@ -40,7 +47,9 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = "admin@arenaflow.com"
     ADMIN_PASSWORD: str = "admin"
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore"
+    )
 
     @property
     def alembic_url(self) -> str:
@@ -48,10 +57,13 @@ class Settings(BaseSettings):
         if self.DATABASE_MIGRATION_URL:
             return self.DATABASE_MIGRATION_URL
         # Convert asyncpg URL to psycopg2 for Alembic sync compatibility
-        return self.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://").split("?")[0]
+        return self.DATABASE_URL.replace(
+            "postgresql+asyncpg://", "postgresql+psycopg2://"
+        ).split("?")[0]
 
     @property
     def is_production(self) -> bool:
         return self.APP_ENV == "production"
+
 
 settings = Settings()

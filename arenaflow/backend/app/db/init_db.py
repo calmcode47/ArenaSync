@@ -17,7 +17,9 @@ from sqlalchemy.pool import NullPool
 
 async def init_db() -> None:
     # Use synchronous engine with psycopg2 for Supabase initialization (best for PgBouncer)
-    sync_url = settings.DATABASE_MIGRATION_URL or settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+    sync_url = settings.DATABASE_MIGRATION_URL or settings.DATABASE_URL.replace(
+        "postgresql+asyncpg://", "postgresql+psycopg2://"
+    )
     sync_engine = create_engine(sync_url, poolclass=NullPool)
 
     try:
@@ -25,7 +27,7 @@ async def init_db() -> None:
             # 1. Seed Admin User
             result = conn.execute(
                 text("SELECT count(*) FROM users WHERE email = :email"),
-                {"email": settings.ADMIN_EMAIL}
+                {"email": settings.ADMIN_EMAIL},
             )
             count = result.scalar()
 
@@ -34,16 +36,24 @@ async def init_db() -> None:
                     hashed_pwd = get_password_hash(settings.ADMIN_PASSWORD)
                     new_id = str(uuid.uuid4())
                     conn.execute(
-                        text("""
+                        text(
+                            """
                         INSERT INTO users (id, email, hashed_password, full_name, role, is_active)
                         VALUES (:id, :email, :password, 'ArenaFlow Admin', 'admin', true)
-                        """),
-                        {"id": new_id, "email": settings.ADMIN_EMAIL, "password": hashed_pwd}
+                        """
+                        ),
+                        {
+                            "id": new_id,
+                            "email": settings.ADMIN_EMAIL,
+                            "password": hashed_pwd,
+                        },
                     )
                     conn.commit()
                     logger.info(f"Admin user seeded: {settings.ADMIN_EMAIL}")
                 else:
-                    logger.warning("Admin email or password missing in environment — skipping seed.")
+                    logger.warning(
+                        "Admin email or password missing in environment — skipping seed."
+                    )
             else:
                 logger.info("Admin user already exists — skipping seed")
 
@@ -52,6 +62,8 @@ async def init_db() -> None:
     finally:
         sync_engine.dispose()
 
+
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(init_db())

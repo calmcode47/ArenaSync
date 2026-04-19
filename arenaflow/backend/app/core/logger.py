@@ -8,6 +8,7 @@ class JSONFormatter(logging.Formatter):
     """
     Custom formatter to output logs in JSON format for Google Cloud Logging.
     """
+
     def format(self, record):
         log_record = {
             "severity": record.levelname,
@@ -16,20 +17,21 @@ class JSONFormatter(logging.Formatter):
             "logging.googleapis.com/sourceLocation": {
                 "file": record.pathname,
                 "line": record.lineno,
-                "function": record.funcName
+                "function": record.funcName,
             },
             "logger": record.name,
             "module": record.module,
         }
 
         # Add any extra attributes passed in logging call
-        if hasattr(record, 'extra'):
+        if hasattr(record, "extra"):
             log_record.update(record.extra)
 
         if record.exc_info:
             log_record["exception"] = self.formatException(record.exc_info)
 
         return json.dumps(log_record)
+
 
 def setup_logging():
     # Force use of JSON formatter for production-ready logs

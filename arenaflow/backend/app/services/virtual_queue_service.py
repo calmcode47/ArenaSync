@@ -17,12 +17,14 @@ from app.schemas.virtual_queue import (
 
 
 class VirtualQueueService:
-    async def join_queue(self, db: AsyncSession, user_id: uuid.UUID, data: JoinVirtualQueueRequest) -> VirtualQueueEntryOut:
+    async def join_queue(
+        self, db: AsyncSession, user_id: uuid.UUID, data: JoinVirtualQueueRequest
+    ) -> VirtualQueueEntryOut:
         # Check active entry
         stmt = select(VirtualQueueEntry).where(
             VirtualQueueEntry.user_id == user_id,
             VirtualQueueEntry.zone_id == data.zone_id,
-            VirtualQueueEntry.status.in_(["waiting", "called", "serving"])
+            VirtualQueueEntry.status.in_(["waiting", "called", "serving"]),
         )
         res = await db.execute(stmt)
         if res.scalars().first():
@@ -31,7 +33,7 @@ class VirtualQueueService:
         # Get max position
         stmt_max = select(func.max(VirtualQueueEntry.position)).where(
             VirtualQueueEntry.zone_id == data.zone_id,
-            VirtualQueueEntry.status.in_(["waiting", "called", "serving"])
+            VirtualQueueEntry.status.in_(["waiting", "called", "serving"]),
         )
         res_max = await db.execute(stmt_max)
         max_pos = res_max.scalar() or 0
@@ -50,7 +52,7 @@ class VirtualQueueService:
             user_id=user_id,
             position=new_pos,
             ticket_code=ticket,
-            estimated_call_time=est_time
+            estimated_call_time=est_time,
         )
         db.add(entry)
         await db.commit()
@@ -70,11 +72,15 @@ class VirtualQueueService:
             ticket_code=entry.ticket_code,
             estimated_call_time=entry.estimated_call_time,
             created_at=entry.created_at,
-            zone_name=zone.name if zone else None
+            zone_name=zone.name if zone else None,
         )
 
-    async def get_queue_status(self, db: AsyncSession, ticket_code: str) -> VirtualQueueStatusOut:
-        stmt = select(VirtualQueueEntry).where(VirtualQueueEntry.ticket_code == ticket_code)
+    async def get_queue_status(
+        self, db: AsyncSession, ticket_code: str
+    ) -> VirtualQueueStatusOut:
+        stmt = select(VirtualQueueEntry).where(
+            VirtualQueueEntry.ticket_code == ticket_code
+        )
         res = await db.execute(stmt)
         entry = res.scalars().first()
         if not entry:
@@ -83,7 +89,7 @@ class VirtualQueueService:
         count_stmt = select(func.count()).where(
             VirtualQueueEntry.zone_id == entry.zone_id,
             VirtualQueueEntry.position < entry.position,
-            VirtualQueueEntry.status.in_(["waiting", "called"])
+            VirtualQueueEntry.status.in_(["waiting", "called"]),
         )
         count_res = await db.execute(count_stmt)
         people_ahead = count_res.scalar() or 0
@@ -96,14 +102,19 @@ class VirtualQueueService:
             status=entry.status,
             estimated_call_time=entry.estimated_call_time,
             people_ahead=people_ahead,
-            estimated_wait_minutes=est_wait
+            estimated_wait_minutes=est_wait,
         )
 
     async def call_next(self, db: AsyncSession, zone_id: uuid.UUID) -> CallNextOut:
-        stmt = select(VirtualQueueEntry).where(
-            VirtualQueueEntry.zone_id == zone_id,
-            VirtualQueueEntry.status == "waiting"
-        ).order_by(VirtualQueueEntry.position.asc()).limit(1)
+        stmt = (
+            select(VirtualQueueEntry)
+            .where(
+                VirtualQueueEntry.zone_id == zone_id,
+                VirtualQueueEntry.status == "waiting",
+            )
+            .order_by(VirtualQueueEntry.position.asc())
+            .limit(1)
+        )
         res = await db.execute(stmt)
         next_entry = res.scalars().first()
 
@@ -123,11 +134,15 @@ class VirtualQueueService:
             ticket_code=next_entry.ticket_code,
             user_id=next_entry.user_id,
             position=next_entry.position,
-            zone_name=zone.name if zone else None
+            zone_name=zone.name if zone else None,
         )
 
-    async def complete_entry(self, db: AsyncSession, ticket_code: str) -> VirtualQueueEntryOut:
-        stmt = select(VirtualQueueEntry).where(VirtualQueueEntry.ticket_code == ticket_code)
+    async def complete_entry(
+        self, db: AsyncSession, ticket_code: str
+    ) -> VirtualQueueEntryOut:
+        stmt = select(VirtualQueueEntry).where(
+            VirtualQueueEntry.ticket_code == ticket_code
+        )
         res = await db.execute(stmt)
         entry = res.scalars().first()
         if not entry:
@@ -147,11 +162,13 @@ class VirtualQueueService:
             ticket_code=entry.ticket_code,
             estimated_call_time=entry.estimated_call_time,
             created_at=entry.created_at,
-            zone_name=None
+            zone_name=None,
         )
 
     async def abandon_entry(self, db: AsyncSession, ticket_code: str) -> None:
-        stmt = select(VirtualQueueEntry).where(VirtualQueueEntry.ticket_code == ticket_code)
+        stmt = select(VirtualQueueEntry).where(
+            VirtualQueueEntry.ticket_code == ticket_code
+        )
         res = await db.execute(stmt)
         entry = res.scalars().first()
         if not entry or entry.status in ["completed", "abandoned"]:
@@ -159,16 +176,22 @@ class VirtualQueueService:
 
         entry.status = "abandoned"
         # Decrement positions of waiting people behind
-        update_stmt = update(VirtualQueueEntry).where(
-            VirtualQueueEntry.zone_id == entry.zone_id,
-            VirtualQueueEntry.position > entry.position,
-            VirtualQueueEntry.status == "waiting"
-        ).values(position=VirtualQueueEntry.position - 1)
+        update_stmt = (
+            update(VirtualQueueEntry)
+            .where(
+                VirtualQueueEntry.zone_id == entry.zone_id,
+                VirtualQueueEntry.position > entry.position,
+                VirtualQueueEntry.status == "waiting",
+            )
+            .values(position=VirtualQueueEntry.position - 1)
+        )
 
         await db.execute(update_stmt)
         await db.commit()
 
-    async def get_zone_summary(self, db: AsyncSession, zone_id: uuid.UUID) -> VirtualQueueSummaryOut:
+    async def get_zone_summary(
+        self, db: AsyncSession, zone_id: uuid.UUID
+    ) -> VirtualQueueSummaryOut:
         z_stmt = select(Zone).where(Zone.id == zone_id)
         z_res = await db.execute(z_stmt)
         zone = z_res.scalars().first()
@@ -177,19 +200,30 @@ class VirtualQueueService:
             raise ValueError("Zone not found")
 
         # Waiting count
-        w_stmt = select(func.count()).where(VirtualQueueEntry.zone_id == zone_id, VirtualQueueEntry.status == "waiting")
+        w_stmt = select(func.count()).where(
+            VirtualQueueEntry.zone_id == zone_id, VirtualQueueEntry.status == "waiting"
+        )
         w_res = await db.execute(w_stmt)
         total_waiting = w_res.scalar() or 0
 
         # Serving count
-        s_stmt = select(func.count()).where(VirtualQueueEntry.zone_id == zone_id, VirtualQueueEntry.status.in_(["called", "serving"]))
+        s_stmt = select(func.count()).where(
+            VirtualQueueEntry.zone_id == zone_id,
+            VirtualQueueEntry.status.in_(["called", "serving"]),
+        )
         s_res = await db.execute(s_stmt)
         currently_serving = s_res.scalar() or 0
 
         # Next ticket
-        n_stmt = select(VirtualQueueEntry.ticket_code).where(
-            VirtualQueueEntry.zone_id == zone_id, VirtualQueueEntry.status == "waiting"
-        ).order_by(VirtualQueueEntry.position.asc()).limit(1)
+        n_stmt = (
+            select(VirtualQueueEntry.ticket_code)
+            .where(
+                VirtualQueueEntry.zone_id == zone_id,
+                VirtualQueueEntry.status == "waiting",
+            )
+            .order_by(VirtualQueueEntry.position.asc())
+            .limit(1)
+        )
         n_res = await db.execute(n_stmt)
         next_ticket = n_res.scalar()
 
@@ -199,5 +233,5 @@ class VirtualQueueService:
             total_waiting=total_waiting,
             currently_serving=currently_serving,
             avg_service_minutes=3.0,
-            next_call_ticket=next_ticket
+            next_call_ticket=next_ticket,
         )

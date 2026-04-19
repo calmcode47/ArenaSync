@@ -10,6 +10,7 @@ from app.core.config import settings
 
 logger = logging.getLogger("arq.worker")
 
+
 # --- INITIALIZATION ---
 async def startup(ctx):
     logger.info("Starting ARQ Worker...")
@@ -20,6 +21,7 @@ async def startup(ctx):
     ctx["db"] = "Mock_DB_Session_Factory"
     ctx["ml_engine"] = "Mock_Prophet_Engine"
     logger.info("ARQ Worker Context Populated")
+
 
 async def shutdown(ctx):
     logger.info("Shutting down ARQ Worker...")
@@ -37,7 +39,12 @@ async def retrain_prophet_models(ctx, venue_id: str) -> dict:
     # 3. Call prophet_engine.fit(zone_id, df)
 
     duration = (time.time() - start) * 1000
-    return {"venue_id": venue_id, "zones_trained": 12, "zones_skipped": 2, "duration_ms": duration}
+    return {
+        "venue_id": venue_id,
+        "zones_trained": 12,
+        "zones_skipped": 2,
+        "duration_ms": duration,
+    }
 
 
 async def retrain_crowd_models(ctx, venue_id: str) -> dict:
@@ -69,14 +76,18 @@ async def auto_resolve_stale_alerts(ctx) -> dict:
 
 
 async def send_ml_heartbeat(ctx) -> dict:
-    redis = ctx.get('redis')
+    redis = ctx.get("redis")
     # Use fallback heartbeat logging if mock
     logger.info("ML Heartbeat Pulse triggered via ARQ")
 
-    payload = {"prophet_zones_fitted": 14, "crowd_model_fitted": True, "timestamp": str(datetime.utcnow())}
+    payload = {
+        "prophet_zones_fitted": 14,
+        "crowd_model_fitted": True,
+        "timestamp": str(datetime.utcnow()),
+    }
     if redis:
-       # await redis.setex("ml:heartbeat", 60, json.dumps(payload))
-       pass
+        # await redis.setex("ml:heartbeat", 60, json.dumps(payload))
+        pass
 
     return payload
 
@@ -92,7 +103,7 @@ class WorkerSettings:
         retrain_crowd_models,
         publish_crowd_summary,
         auto_resolve_stale_alerts,
-        send_ml_heartbeat
+        send_ml_heartbeat,
     ]
     cron_jobs = cron_jobs
 

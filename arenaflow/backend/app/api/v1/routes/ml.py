@@ -7,6 +7,7 @@ from app.services.ml.prophet_engine import prophet_engine
 
 router = APIRouter()
 
+
 @router.post("/warmup")
 async def warmup_ml(payload: dict = Body(...)) -> Dict[str, Any]:
     venue_id = payload.get("venue_id")
@@ -15,7 +16,4 @@ async def warmup_ml(payload: dict = Body(...)) -> Dict[str, Any]:
 
     async with AsyncSessionLocal() as db:
         result = await prophet_engine.warmup_all_zones(db, venue_id)
-        return {
-            "status": "ok",
-            "prophet": result
-        }
+        return {"status": "ok", "prophet": result}

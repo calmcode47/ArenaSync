@@ -17,16 +17,17 @@ from app.services.ml.prophet_engine import prophet_engine
 
 router = APIRouter()
 
+
 @router.get("", tags=["health"])
 async def health_check() -> Dict[str, str]:
     """Basic health check for Cloud Run / Liveness probes."""
     return {"status": "ok", "env": settings.APP_ENV}
 
+
 @router.get("/detailed", tags=["health"])
 @limiter.limit("5/minute")
 async def detailed_health_check(
-    request: Request,
-    db: AsyncSession = Depends(get_db)
+    request: Request, db: AsyncSession = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Detailed health check for administration and integration verification.
@@ -72,6 +73,7 @@ async def detailed_health_check(
     try:
         # Check if we can get a global instance (to be added)
         from app.services.ml.crowd_model import crowd_model
+
         crowd_model_fitted = crowd_model.is_fitted
     except ImportError:
         pass
@@ -91,8 +93,11 @@ async def detailed_health_check(
             "redis": {"status": redis_status, "latency_ms": round(redis_latency, 2)},
             "firebase": {"status": firebase_status},
             "prophet": {"status": prophet_status, "zones_fitted": zones_fitted},
-            "crowd_model": {"status": "ok" if crowd_model_fitted else "not_trained", "is_fitted": crowd_model_fitted}
+            "crowd_model": {
+                "status": "ok" if crowd_model_fitted else "not_trained",
+                "is_fitted": crowd_model_fitted,
+            },
         },
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "total_check_time_ms": round((time.time() - start_time) * 1000, 2)
+        "total_check_time_ms": round((time.time() - start_time) * 1000, 2),
     }

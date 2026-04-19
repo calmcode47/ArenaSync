@@ -12,42 +12,42 @@ from app.services.translate_service import SUPPORTED_LANGS, TranslateService
 router = APIRouter()
 translate_service = TranslateService()
 
+
 class TranslateTextRequest(BaseModel):
     text: str
     target_lang: str
     source_lang: str = "en"
+
 
 class TranslateTextResponse(BaseModel):
     original: str
     translated: str
     target_lang: str
 
+
 @router.post("/text", response_model=TranslateTextResponse)
 @limiter.limit("20/minute")
-async def translate_text(
-    request: Request,
-    req_data: TranslateTextRequest
-) -> Any:
+async def translate_text(request: Request, req_data: TranslateTextRequest) -> Any:
     """Translate arbitrary string text to a target language."""
     if req_data.target_lang not in SUPPORTED_LANGS:
-        raise HTTPException(status_code=400, detail=f"Unsupported language. Supported: {SUPPORTED_LANGS}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported language. Supported: {SUPPORTED_LANGS}",
+        )
 
     translated = await translate_service.translate_text(
-        req_data.text,
-        req_data.target_lang,
-        req_data.source_lang
+        req_data.text, req_data.target_lang, req_data.source_lang
     )
     return {
         "original": req_data.text,
         "translated": translated,
-        "target_lang": req_data.target_lang
+        "target_lang": req_data.target_lang,
     }
+
 
 @router.post("/alert/{id}")
 async def retranslate_alert(
-    id: UUID,
-    target_lang: str,
-    db: AsyncSession = Depends(get_db)
+    id: UUID, target_lang: str, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """Retranslate an existing alert into a new language and continuously update the record."""
     alert = await db.get(Alert, id)
@@ -67,6 +67,7 @@ async def retranslate_alert(
     await db.commit()
     await db.refresh(alert)
     return alert
+
 
 @router.get("/languages", response_model=List[str])
 async def list_languages() -> Any:

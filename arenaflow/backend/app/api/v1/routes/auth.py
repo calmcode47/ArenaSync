@@ -15,41 +15,42 @@ from app.schemas.user import TokenOut, UserCreate, UserOut, UserUpdate
 
 router = APIRouter()
 
+
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
 async def register(
-    request: Request,
-    user_in: UserCreate,
-    db: AsyncSession = Depends(get_db)
+    request: Request, user_in: UserCreate, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """Register a new user."""
     result = await db.execute(select(User).where(User.email == user_in.email))
     if result.scalars().first():
         raise HTTPException(
             status_code=409,
-            detail="The user with this email already exists in the system."
+            detail="The user with this email already exists in the system.",
         )
     user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name,
         preferred_language=user_in.preferred_language,
-        role="attendee"
+        role="attendee",
     )
     db.add(user)
     await db.commit()
     await db.refresh(user)
     return user
 
+
 @router.post("/login", response_model=TokenOut)
 @limiter.limit("10/minute")
 async def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Login and get a JWT."""
     import logging
+
     logger = logging.getLogger(__name__)
     logger.info(f"Login attempt for: {form_data.username}")
 
@@ -67,12 +68,11 @@ async def login(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 @router.post("/firebase-login", response_model=TokenOut)
 @limiter.limit("10/minute")
 async def firebase_login(
-    request: Request,
-    id_token: str,
-    db: AsyncSession = Depends(get_db)
+    request: Request, id_token: str, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """Login or register via Firebase ID token."""
     decoded_token = await firebase_client.verify_token(id_token)
@@ -98,7 +98,7 @@ async def firebase_login(
                 hashed_password="",
                 full_name=decoded_token.get("name", "Firebase User"),
                 firebase_uid=uid,
-                role="attendee"
+                role="attendee",
             )
             db.add(user)
 
@@ -111,18 +111,18 @@ async def firebase_login(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 @router.get("/me", response_model=UserOut)
-async def read_user_me(
-    current_user: User = Depends(get_current_user)
-) -> Any:
+async def read_user_me(current_user: User = Depends(get_current_user)) -> Any:
     """Get current user profile."""
     return current_user
+
 
 @router.patch("/me", response_model=UserOut)
 async def update_user_me(
     user_update: UserUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ) -> Any:
     """Update current user profile name, language, or fcm_token."""
     if user_update.full_name is not None:
@@ -137,11 +137,11 @@ async def update_user_me(
     await db.refresh(current_user)
     return current_user
 
+
 @router.post("/refresh", response_model=TokenOut)
 @limiter.limit("10/minute")
 async def refresh_token(
-    request: Request,
-    current_user: User = Depends(get_current_user)
+    request: Request, current_user: User = Depends(get_current_user)
 ) -> Any:
     """Refresh JWT token for current user."""
     access_token = create_access_token(

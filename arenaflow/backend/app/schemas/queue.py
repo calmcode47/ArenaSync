@@ -11,6 +11,7 @@ class QueueEntryCreate(BaseModel):
     queue_length: int
     service_rate: float = 10.0
 
+
 class QueueEntryOut(BaseModel):
     id: UUID
     zone_id: UUID
@@ -30,6 +31,7 @@ class QueueForecastPoint(BaseModel):
     yhat_lower: float
     yhat_upper: float
 
+
 class QueuePredictionOut(BaseModel):
     zone_id: UUID
     zone_name: str
@@ -38,6 +40,7 @@ class QueuePredictionOut(BaseModel):
     confidence_score: float
     congestion_level: str
     next_30min_forecast: List[QueueForecastPoint]
+
 
 class VenueQueueSummary(BaseModel):
     venue_id: UUID

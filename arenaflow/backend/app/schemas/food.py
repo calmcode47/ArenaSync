@@ -14,15 +14,18 @@ class FoodItemOut(BaseModel):
     image_url: str
     is_available: bool = True
 
+
 class OrderItemCreate(BaseModel):
     item_id: str
     quantity: int
+
 
 class OrderCreate(BaseModel):
     venue_id: UUID
     items: List[OrderItemCreate]
     total_amount: float
     seat_identifier: Optional[str] = None
+
 
 class OrderOut(BaseModel):
     id: str

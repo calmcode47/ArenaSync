@@ -9,6 +9,7 @@ class JoinVirtualQueueRequest(BaseModel):
     zone_id: UUID
     venue_id: UUID
 
+
 class VirtualQueueEntryOut(BaseModel):
     id: UUID
     zone_id: UUID
@@ -22,6 +23,7 @@ class VirtualQueueEntryOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class VirtualQueueStatusOut(BaseModel):
     ticket_code: str
     position: int
@@ -30,14 +32,17 @@ class VirtualQueueStatusOut(BaseModel):
     people_ahead: int
     estimated_wait_minutes: float
 
+
 class CallNextRequest(BaseModel):
     zone_id: UUID
+
 
 class CallNextOut(BaseModel):
     ticket_code: str
     user_id: UUID
     position: int
     zone_name: Optional[str] = None
+
 
 class VirtualQueueSummaryOut(BaseModel):
     zone_id: UUID

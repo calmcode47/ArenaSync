@@ -11,11 +11,9 @@ engine = create_async_engine(
     poolclass=NullPool,
     echo=settings.APP_ENV == "development",
     connect_args={
-        "statement_cache_size": 0,            # Required for PgBouncer transaction mode
-        "server_settings": {
-            "jit": "off"                      # Disable JIT for PgBouncer compatibility
-        }
-    }
+        "statement_cache_size": 0,  # Required for PgBouncer transaction mode
+        "server_settings": {"jit": "off"},  # Disable JIT for PgBouncer compatibility
+    },
 )
 
 AsyncSessionLocal = async_sessionmaker(

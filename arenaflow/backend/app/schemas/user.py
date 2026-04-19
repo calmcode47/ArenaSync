@@ -10,13 +10,16 @@ class UserBase(BaseModel):
     full_name: str
     preferred_language: str = "en"
 
+
 class UserCreate(UserBase):
     password: str
+
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     preferred_language: Optional[str] = None
     fcm_token: Optional[str] = None
+
 
 class UserOut(UserBase):
     id: UUID
@@ -26,9 +29,11 @@ class UserOut(UserBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
 
 class LoginRequest(BaseModel):
     email: str

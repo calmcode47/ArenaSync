@@ -16,14 +16,19 @@ from app.services.translate_service import TranslateService
 
 logger = logging.getLogger(__name__)
 
+
 class AlertService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.translate_service = TranslateService()
 
-    async def create_alert(self, data: AlertCreate, created_by: UUID | None) -> AlertOut:
+    async def create_alert(
+        self, data: AlertCreate, created_by: UUID | None
+    ) -> AlertOut:
         try:
-            translated_dict = await self.translate_service.translate_alert(data.title, data.message)
+            translated_dict = await self.translate_service.translate_alert(
+                data.title, data.message
+            )
         except Exception as e:
             logger.warning(f"Translation failed: {e}")
             translated_dict = {}
@@ -39,7 +44,7 @@ class AlertService:
             translated_messages=translated_dict,
             is_resolved=False,
             fcm_sent=False,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(timezone.utc),
         )
 
         # Pre-add to get ID if needed, but we can do it after flush
@@ -61,7 +66,7 @@ class AlertService:
                             "venue_id": str(data.venue_id),
                             "severity": data.severity,
                             "alert_type": data.alert_type,
-                        }
+                        },
                     )
                     if success:
                         sent_count += 1
@@ -81,10 +86,14 @@ class AlertService:
             severity=out.severity,
             venue_id=out.venue_id,
             zone_id=out.zone_id,
-            timestamp=out.created_at
+            timestamp=out.created_at,
         )
 
-        await publish_event(f"alerts:{str(data.venue_id)}", broadcast_data.model_dump(mode="json"), event_type="alert_created")
+        await publish_event(
+            f"alerts:{str(data.venue_id)}",
+            broadcast_data.model_dump(mode="json"),
+            event_type="alert_created",
+        )
         return out
 
     async def delete_alert(self, alert_id: UUID) -> bool:
@@ -96,7 +105,11 @@ class AlertService:
         await self.db.delete(alert)
         await self.db.commit()
 
-        await publish_event(f"alerts:{str(venue_id)}", {"alert_id": str(alert_id)}, event_type="alert_deleted")
+        await publish_event(
+            f"alerts:{str(venue_id)}",
+            {"alert_id": str(alert_id)},
+            event_type="alert_deleted",
+        )
         return True
 
     async def _get_staff_fcm_tokens(self, venue_id: UUID) -> list[str]:
@@ -122,12 +135,10 @@ class AlertService:
         return AlertOut.model_validate(alert)
 
     async def get_active_alerts(self, venue_id: UUID) -> list[AlertOut]:
-        stmt = select(Alert).where(
-            Alert.venue_id == venue_id,
-            Alert.is_resolved == False
-        ).order_by(
-            desc(Alert.severity),
-            desc(Alert.created_at)
+        stmt = (
+            select(Alert)
+            .where(Alert.venue_id == venue_id, Alert.is_resolved == False)
+            .order_by(desc(Alert.severity), desc(Alert.created_at))
         )
 
         res = await self.db.execute(stmt)
@@ -136,6 +147,7 @@ class AlertService:
 
     def _get_mock_alerts(self, venue_id: UUID) -> list[AlertOut]:
         from datetime import datetime, timezone
+
         now = datetime.now(timezone.utc)
         return [
             AlertOut(
@@ -149,7 +161,7 @@ class AlertService:
                 translated_messages={},
                 is_resolved=False,
                 fcm_sent=True,
-                created_at=now
+                created_at=now,
             ),
             AlertOut(
                 id=UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
@@ -162,18 +174,20 @@ class AlertService:
                 translated_messages={},
                 is_resolved=False,
                 fcm_sent=False,
-                created_at=now
-            )
+                created_at=now,
+            ),
         ]
 
-    async def auto_alert_from_crowd(self, zone_id: UUID, venue_id: UUID, congestion_level: str) -> None:
+    async def auto_alert_from_crowd(
+        self, zone_id: UUID, venue_id: UUID, congestion_level: str
+    ) -> None:
         if congestion_level not in ["high", "critical"]:
             return
 
         stmt = select(Alert).where(
             Alert.zone_id == zone_id,
             Alert.alert_type == "overcrowding",
-            Alert.is_resolved == False
+            Alert.is_resolved == False,
         )
         res = await self.db.execute(stmt)
         if res.scalars().first() is not None:
@@ -185,6 +199,6 @@ class AlertService:
             alert_type="overcrowding",
             severity=congestion_level,
             title=f"Overcrowding Warning ({congestion_level.upper()})",
-            message="High crowd density detected in this zone. Please dispatch staff or direct attendees elsewhere."
+            message="High crowd density detected in this zone. Please dispatch staff or direct attendees elsewhere.",
         )
         await self.create_alert(alert_data, created_by=None)

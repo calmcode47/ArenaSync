@@ -6,11 +6,13 @@ from app.services.food_service import food_service
 
 router = APIRouter()
 
+
 @router.get("/items", response_model=list[FoodItemOut])
 @limiter.limit("60/minute")
 async def get_food_items(request: Request):
     """Retrieve all available food items."""
     return await food_service.get_items()
+
 
 @router.post("/order", response_model=OrderOut)
 @limiter.limit("10/minute")

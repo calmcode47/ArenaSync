@@ -13,8 +13,10 @@ class ZoneBase(BaseModel):
     longitude: float
     polygon_coords: Any
 
+
 class ZoneCreate(ZoneBase):
     venue_id: UUID
+
 
 class ZoneOut(ZoneBase):
     id: UUID
@@ -22,6 +24,7 @@ class ZoneOut(ZoneBase):
     is_active: bool
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class VenueBase(BaseModel):
     name: str
@@ -31,9 +34,11 @@ class VenueBase(BaseModel):
     latitude: float
     longitude: float
 
+
 class VenueCreate(VenueBase):
     google_place_id: Optional[str] = None
     config_json: Optional[Any] = None
+
 
 class VenueOut(VenueBase):
     id: UUID

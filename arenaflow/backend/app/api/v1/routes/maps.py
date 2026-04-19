@@ -39,7 +39,7 @@ DEMO_VENUE_DATA = {
             "latitude": 40.7505,
             "longitude": -73.9934,
             "polygon_coords": [],
-            "is_active": True
+            "is_active": True,
         },
         {
             "id": "22222222-2222-2222-2222-222222222222",
@@ -50,7 +50,7 @@ DEMO_VENUE_DATA = {
             "latitude": 40.7506,
             "longitude": -73.9935,
             "polygon_coords": [],
-            "is_active": True
+            "is_active": True,
         },
         {
             "id": "33333333-3333-3333-3333-333333333333",
@@ -61,10 +61,11 @@ DEMO_VENUE_DATA = {
             "latitude": 40.7507,
             "longitude": -73.9936,
             "polygon_coords": [],
-            "is_active": True
-        }
-    ]
+            "is_active": True,
+        },
+    ],
 }
+
 
 @router.get("/venue/{venue_id}", response_model=VenueOut)
 async def get_venue(
@@ -76,9 +77,7 @@ async def get_venue(
 
     try:
         result = await db.execute(
-            select(Venue)
-            .options(selectinload(Venue.zones))
-            .where(Venue.id == venue_id)
+            select(Venue).options(selectinload(Venue.zones)).where(Venue.id == venue_id)
         )
         venue = result.scalars().first()
         if not venue:
@@ -90,6 +89,7 @@ async def get_venue(
         if settings.DEMO_MODE or "connection" in str(e).lower():
             return DEMO_VENUE_DATA
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/venue/{venue_id}/details")
 @limiter.limit("30/minute")
@@ -103,8 +103,11 @@ async def get_venue_details(
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
     if not venue.google_place_id:
-        raise HTTPException(status_code=409, detail="Venue has no stored Google Place ID")
+        raise HTTPException(
+            status_code=409, detail="Venue has no stored Google Place ID"
+        )
     return await maps_service.get_venue_details(venue.google_place_id)
+
 
 @router.get("/directions")
 @limiter.limit("20/minute")
@@ -114,19 +117,20 @@ async def get_directions(
     origin_lng: float,
     dest_lat: float,
     dest_lng: float,
-    mode: str = "walking"
+    mode: str = "walking",
 ) -> Any:
     """Get directions between origin and destination coordinates."""
-    return await maps_service.get_directions((origin_lat, origin_lng), (dest_lat, dest_lng), mode)
+    return await maps_service.get_directions(
+        (origin_lat, origin_lng), (dest_lat, dest_lng), mode
+    )
+
 
 @router.get("/geocode")
 @limiter.limit("20/minute")
-async def geocode_address(
-    request: Request,
-    address: str
-) -> Any:
+async def geocode_address(request: Request, address: str) -> Any:
     """Convert a string address to lat/lng coordinates."""
     return await maps_service.geocode(address)
+
 
 @router.get("/nearby-venues")
 @limiter.limit("20/minute")
@@ -134,21 +138,25 @@ async def get_nearby_venues(
     request: Request,
     lat: float,
     lng: float,
-    radius: int = Query(5000, description="Radius in meters")
+    radius: int = Query(5000, description="Radius in meters"),
 ) -> Any:
     """Find nearby sporting venues within a given radius."""
     if not maps_service.gmaps:
-        raise HTTPException(status_code=502, detail="Google Maps integration not configured")
+        raise HTTPException(
+            status_code=502, detail="Google Maps integration not configured"
+        )
     try:
         import asyncio
+
         places = await asyncio.to_thread(
             maps_service.gmaps.places_nearby,
             location=(lat, lng),
             radius=radius,
-            type='stadium'
+            type="stadium",
         )
-        return places.get('results', [])
+        return places.get("results", [])
     except Exception as e:
         import logging
+
         logging.error(f"Failed to find nearby venues: {e}")
         raise HTTPException(status_code=502, detail="Google Maps API error")

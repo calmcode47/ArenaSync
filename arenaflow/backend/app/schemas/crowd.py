@@ -11,6 +11,7 @@ class CrowdSnapshotCreate(BaseModel):
     current_count: int
     flow_direction: Optional[Any] = None
 
+
 class CrowdSnapshotOut(BaseModel):
     id: UUID
     zone_id: UUID
@@ -23,6 +24,7 @@ class CrowdSnapshotOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ZoneCrowdStatus(BaseModel):
     zone_id: UUID
     zone_name: str
@@ -34,6 +36,7 @@ class ZoneCrowdStatus(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
 
+
 class VenueCrowdSummary(BaseModel):
     venue_id: UUID
     total_current_count: int
@@ -41,10 +44,12 @@ class VenueCrowdSummary(BaseModel):
     overall_occupancy_pct: float
     zones: List[ZoneCrowdStatus]
 
+
 class CrowdHeatmapPoint(BaseModel):
     latitude: float
     longitude: float
     weight: float
+
 
 class VenueHeatmapOut(BaseModel):
     venue_id: UUID

@@ -10,6 +10,7 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+
 class MapsService:
     def __init__(self):
         # Nominatim requires a user_agent
@@ -28,12 +29,15 @@ class MapsService:
         return {
             "name": "Arena Venue",
             "formatted_address": "Geolocation active via OpenStreetMap",
-            "geometry": {
-                "location": {"lat": 0, "lng": 0}
-            }
+            "geometry": {"location": {"lat": 0, "lng": 0}},
         }
 
-    async def get_directions(self, origin: tuple[float, float], destination: tuple[float, float], mode: str = "walking") -> dict:
+    async def get_directions(
+        self,
+        origin: tuple[float, float],
+        destination: tuple[float, float],
+        mode: str = "walking",
+    ) -> dict:
         """
         Fetch walking directions using OSRM (Open Source Routing Machine).
         """
@@ -51,20 +55,22 @@ class MapsService:
                     raise Exception(f"OSRM error: {response.text}")
 
                 data = response.json()
-                if not data.get('routes'):
+                if not data.get("routes"):
                     return {}
 
-                route = data['routes'][0]
-                leg = route['legs'][0]
+                route = data["routes"][0]
+                leg = route["legs"][0]
 
                 return {
                     "distance": f"{leg['distance'] / 1000:.1f} km",
                     "duration": f"{leg['duration'] / 60:.0f} mins",
-                    "steps": [step['maneuver']['instruction'] for step in leg['steps']]
+                    "steps": [step["maneuver"]["instruction"] for step in leg["steps"]],
                 }
         except Exception as e:
             logger.error(f"Routing error: {e}")
-            raise HTTPException(status_code=502, detail="Failed to fetch open routing data")
+            raise HTTPException(
+                status_code=502, detail="Failed to fetch open routing data"
+            )
 
     async def geocode(self, address: str) -> dict:
         """
@@ -78,7 +84,9 @@ class MapsService:
             return {}
         except GeopyError as e:
             logger.error(f"Geocoding error: {e}")
-            raise HTTPException(status_code=502, detail="Failed to geocode address via OpenStreetMap")
+            raise HTTPException(
+                status_code=502, detail="Failed to geocode address via OpenStreetMap"
+            )
 
     async def snap_to_roads(self, path: list[tuple]) -> list[dict]:
         """

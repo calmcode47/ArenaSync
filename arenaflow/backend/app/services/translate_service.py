@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_LANGS = ["es", "hi", "fr", "de", "pt", "ar", "zh"]
 
+
 class TranslateService:
     def __init__(self):
         try:
@@ -18,7 +19,9 @@ class TranslateService:
             logger.error(f"Failed to initialize Google Translate client: {e}")
             self.client = None
 
-    async def translate_text(self, text: str, target_lang: str, source_lang: str = "en") -> str:
+    async def translate_text(
+        self, text: str, target_lang: str, source_lang: str = "en"
+    ) -> str:
         if not self.client:
             logger.warning("Translation service unavailable, returning original text")
             return text
@@ -28,9 +31,9 @@ class TranslateService:
                 self.client.translate,
                 text,
                 target_language=target_lang,
-                source_language=source_lang
+                source_language=source_lang,
             )
-            return result['translatedText']
+            return result["translatedText"]
         except Exception as e:
             logger.error(f"Translation API error: {e}")
             return text
@@ -49,7 +52,9 @@ class TranslateService:
 
             for index, res in enumerate(completed):
                 if isinstance(res, Exception):
-                    logger.error(f"Failed translation for lang {SUPPORTED_LANGS[index]}: {res}")
+                    logger.error(
+                        f"Failed translation for lang {SUPPORTED_LANGS[index]}: {res}"
+                    )
                 else:
                     lang, trans_data = res
                     results[lang] = trans_data

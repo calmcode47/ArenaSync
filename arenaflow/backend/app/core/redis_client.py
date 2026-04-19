@@ -10,9 +10,12 @@ logger = logging.getLogger(__name__)
 
 redis = None
 if getattr(settings, "UPSTASH_REDIS_REST_URL", None):
-    redis = Redis(url=settings.UPSTASH_REDIS_REST_URL, token=settings.UPSTASH_REDIS_REST_TOKEN)
+    redis = Redis(
+        url=settings.UPSTASH_REDIS_REST_URL, token=settings.UPSTASH_REDIS_REST_TOKEN
+    )
 else:
     logger.warning("Redis not configured — caching disabled")
+
 
 async def get_cached(key: str) -> Optional[Any]:
     if not redis:
@@ -26,6 +29,7 @@ async def get_cached(key: str) -> Optional[Any]:
         logger.warning(f"Redis GET failed for {key}: {e}")
         return None
 
+
 async def set_cached(key: str, value: Any, ttl_seconds: int = 300) -> None:
     if not redis:
         return
@@ -35,6 +39,7 @@ async def set_cached(key: str, value: Any, ttl_seconds: int = 300) -> None:
     except Exception as e:
         logger.warning(f"Redis SET failed for {key}: {e}")
 
+
 async def invalidate(key: str) -> None:
     if not redis:
         return
@@ -42,6 +47,7 @@ async def invalidate(key: str) -> None:
         await redis.delete(key)
     except Exception as e:
         logger.warning(f"Redis DELETE failed for {key}: {e}")
+
 
 async def publish_event(channel: str, payload: dict) -> None:
     if not redis:

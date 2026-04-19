@@ -13,6 +13,7 @@ class AlertCreate(BaseModel):
     title: str
     message: str
 
+
 class AlertOut(BaseModel):
     id: UUID
     venue_id: UUID
@@ -28,8 +29,10 @@ class AlertOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class AlertUpdate(BaseModel):
     is_resolved: bool
+
 
 class AlertBroadcast(BaseModel):
     alert_id: UUID
