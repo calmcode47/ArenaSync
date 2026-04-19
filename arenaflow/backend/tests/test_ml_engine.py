@@ -90,7 +90,7 @@ def test_ml_forecast_loop():
     # (In real scenario we'd use a saved model)
     from unittest.mock import MagicMock
     model.classifier = MagicMock()
-    model.classifier.predict.return_value = [0] # 'low'
+    model.classifier.predict.return_value = [2] # 'low' (alphabetically: critical=0, high=1, low=2, moderate=3)
     model.classifier.predict_proba.return_value = [[0.8, 0.1, 0.05, 0.05]]
     model.density_regressor = MagicMock()
     model.density_regressor.predict.return_value = [0.2]

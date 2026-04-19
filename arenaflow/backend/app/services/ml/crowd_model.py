@@ -102,7 +102,11 @@ class CrowdDensityModel:
         self.density_regressor.fit(X_train_scaled, yr_train)
 
         report = classification_report(
-            yc_test, yc_pred, target_names=self.label_encoder.classes_, zero_division=0
+            yc_test,
+            yc_pred,
+            labels=self.label_encoder.transform(self.label_encoder.classes_),
+            target_names=self.label_encoder.classes_,
+            zero_division=0,
         )
 
         self.is_fitted = True

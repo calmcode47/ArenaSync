@@ -20,6 +20,7 @@ os.environ.setdefault("FIREBASE_PROJECT_ID", "test-project")
 os.environ.setdefault("GOOGLE_MAPS_API_KEY", "test_maps_key")
 os.environ.setdefault("GOOGLE_TRANSLATE_API_KEY", "test_translate_key")
 os.environ.setdefault("ALLOWED_ORIGINS", "[\"http://localhost:5173\"]")
+os.environ["DEMO_MODE"] = "False"
 
 from app.core.config import settings
 from app.db.session import Base, get_db
