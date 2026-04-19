@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, Request
+
+from app.core.dependencies import limiter
 from app.schemas.food import FoodItemOut, OrderCreate, OrderOut
 from app.services.food_service import food_service
-from app.core.dependencies import limiter
 
 router = APIRouter()
 

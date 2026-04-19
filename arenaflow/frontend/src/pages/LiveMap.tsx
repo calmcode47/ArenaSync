@@ -178,13 +178,17 @@ export default function LiveMap() {
 
     useEffect(() => {
         const hasShown = sessionStorage.getItem("arenaflow_map_intro_shown");
-        if (!hasShown) {
-            setShowGlobe(true);
-            sessionStorage.setItem("arenaflow_map_intro_shown", "true");
-            const t1 = setTimeout(() => setIntroText("LOCALIZING ASSETS"), 1500);
-            const t2 = setTimeout(() => setShowGlobe(false), 3000);
-            return () => { clearTimeout(t1); clearTimeout(t2); };
-        }
+        if (hasShown) return;
+
+        setShowGlobe(true);
+        sessionStorage.setItem("arenaflow_map_intro_shown", "true");
+        const t1 = setTimeout(() => setIntroText("LOCALIZING ASSETS"), 1500);
+        const t2 = setTimeout(() => setShowGlobe(false), 3000);
+        
+        return () => { 
+            clearTimeout(t1); 
+            clearTimeout(t2); 
+        };
     }, []);
 
     useEffect(() => {

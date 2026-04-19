@@ -3,7 +3,8 @@ import string
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from app.schemas.food import FoodItemOut, OrderOut, OrderCreate
+from app.schemas.food import FoodItemOut, OrderCreate, OrderOut
+
 
 class FoodService:
     def __init__(self):

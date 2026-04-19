@@ -109,10 +109,10 @@ function RadarScanner({ alerts }: { alerts: any[] }) {
                 })}
 
                 <defs>
-                    <conicGradient id="sweepGradient" cx="125" cy="125">
+                    <radialGradient id="sweepGradient" cx="125" cy="125" r="120" fx="125" fy="125" gradientUnits="userSpaceOnUse">
                         <stop offset="0%" stopColor="#00d4ff" stopOpacity="0.6" />
-                        <stop offset="10%" stopColor="#00d4ff" stopOpacity="0" />
-                    </conicGradient>
+                        <stop offset="100%" stopColor="#00d4ff" stopOpacity="0" />
+                    </radialGradient>
                 </defs>
             </svg>
         </div>

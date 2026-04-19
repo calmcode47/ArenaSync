@@ -1,13 +1,14 @@
-import os
+import asyncio
 import base64
 import logging
-import asyncio
+import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 import firebase_admin
-from firebase_admin import credentials, auth, messaging, firestore
+from firebase_admin import auth, credentials, firestore, messaging
+
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ def _initialize_firebase() -> Optional[firebase_admin.App]:
         return None
 
     cred_path = None
-    
+
     # 1. Check for Base64 credentials (Cloud Run / Production)
     b64_creds = os.environ.get("FIREBASE_CREDENTIALS_BASE64")
     if b64_creds:
@@ -60,7 +61,7 @@ def _initialize_firebase() -> Optional[firebase_admin.App]:
             logger.error(f"Firebase: Initialization failed: {e}")
     else:
         logger.warning("Firebase: No credentials provided. SDK functionality disabled.")
-    
+
     return None
 
 # Global Firebase app instance
@@ -86,7 +87,7 @@ async def verify_firebase_token(id_token: str) -> Optional[Dict[str, Any]]:
         loop = asyncio.get_event_loop()
         # verify_id_token is a sync call
         decoded_token = await loop.run_in_executor(
-            executor, 
+            executor,
             lambda: auth.verify_id_token(id_token, check_revoked=True)
         )
         return decoded_token
@@ -95,9 +96,9 @@ async def verify_firebase_token(id_token: str) -> Optional[Dict[str, Any]]:
         return None
 
 async def send_fcm_notification(
-    fcm_token: str, 
-    title: str, 
-    body: str, 
+    fcm_token: str,
+    title: str,
+    body: str,
     data: Optional[Dict[str, str]] = None
 ) -> bool:
     """
@@ -116,7 +117,7 @@ async def send_fcm_notification(
             data=data or {},
             token=fcm_token,
         )
-        
+
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(
             executor,
@@ -143,7 +144,7 @@ async def register_fcm_token(user_id: str, fcm_token: str) -> None:
     try:
         db = firestore.client()
         doc_ref = db.collection("fcm_tokens").document(user_id)
-        
+
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(
             executor,

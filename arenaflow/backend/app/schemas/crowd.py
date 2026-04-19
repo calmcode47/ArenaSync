@@ -1,7 +1,9 @@
-from pydantic import BaseModel, ConfigDict
-from uuid import UUID
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
+
 
 class CrowdSnapshotCreate(BaseModel):
     zone_id: UUID
@@ -18,7 +20,7 @@ class CrowdSnapshotOut(BaseModel):
     congestion_level: str
     flow_direction: Any
     recorded_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 class ZoneCrowdStatus(BaseModel):

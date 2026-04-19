@@ -1,11 +1,13 @@
 import uuid
 from datetime import datetime
-from typing import Optional, List
-from sqlalchemy import String, Boolean, DateTime, Enum, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import List, Optional
+
+from sqlalchemy import Boolean, DateTime, Enum, String, func
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -15,15 +17,15 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     full_name: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[str] = mapped_column(
-        Enum("admin", "staff", "attendee", name="user_role_enum"), 
-        default="attendee", 
+        Enum("admin", "staff", "attendee", name="user_role_enum"),
+        default="attendee",
         nullable=False
     )
     firebase_uid: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     preferred_language: Mapped[str] = mapped_column(String, default="en", nullable=False)
     fcm_token: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

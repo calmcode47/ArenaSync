@@ -1,19 +1,24 @@
 import logging
-from uuid import UUID
+import random
 from datetime import datetime, timezone
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc
-from fastapi import HTTPException, status
+from uuid import UUID
 
+from fastapi import HTTPException, status
+from sqlalchemy import desc, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import settings
+from app.core.redis_client import get_cached, set_cached
 from app.models.crowd_snapshot import CrowdSnapshot
 from app.models.zone import Zone
 from app.schemas.crowd import (
-    CrowdSnapshotCreate, CrowdSnapshotOut, VenueCrowdSummary,
-    ZoneCrowdStatus, CrowdHeatmapPoint, VenueHeatmapOut
+    CrowdHeatmapPoint,
+    CrowdSnapshotCreate,
+    CrowdSnapshotOut,
+    VenueCrowdSummary,
+    VenueHeatmapOut,
+    ZoneCrowdStatus,
 )
-from app.core.redis_client import set_cached, get_cached
-from app.core.config import settings
-import random
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +30,12 @@ class CrowdService:
         stmt = select(Zone).where(Zone.id == data.zone_id)
         result = await self.db.execute(stmt)
         zone = result.scalar_one_or_none()
-        
+
         if not zone:
             raise HTTPException(status_code=404, detail="Zone not found")
 
         density_score = min(data.current_count / zone.capacity, 1.0) if zone.capacity > 0 else 1.0
-        
+
         if density_score < 0.5:
             congestion_level = "low"
         elif density_score < 0.7:
@@ -80,16 +85,16 @@ class CrowdService:
 
             zones_result = await self.db.execute(select(Zone).where(Zone.venue_id == venue_id))
             zones = zones_result.scalars().all()
-            
+
             zone_statuses = []
             total_current_count = 0
             total_capacity = 0
-            
+
             for zone in zones:
                 stmt = select(CrowdSnapshot).where(CrowdSnapshot.zone_id == zone.id).order_by(desc(CrowdSnapshot.recorded_at)).limit(1)
                 snap_result = await self.db.execute(stmt)
                 latest_snap = snap_result.scalar_one_or_none()
-                
+
                 if latest_snap:
                     count = latest_snap.current_count
                     density = latest_snap.density_score
@@ -127,8 +132,9 @@ class CrowdService:
 
     def _get_mock_summary(self, venue_id: UUID) -> VenueCrowdSummary:
         # Generate dynamic jitter (±3%)
-        jitter = lambda x: int(x * random.uniform(0.97, 1.03))
-        
+        def jitter(x):
+            return int(x * random.uniform(0.97, 1.03))
+
         zone_statuses = [
             ZoneCrowdStatus(
                 zone_id=UUID("11111111-1111-1111-1111-111111111111"),
@@ -164,10 +170,10 @@ class CrowdService:
                 longitude=-73.9934
             )
         ]
-        
+
         total_count = sum(z.current_count for z in zone_statuses)
         total_cap = sum(z.capacity for z in zone_statuses)
-        
+
         return VenueCrowdSummary(
             venue_id=venue_id,
             total_current_count=total_count,
@@ -179,24 +185,24 @@ class CrowdService:
     async def get_heatmap(self, venue_id: UUID) -> VenueHeatmapOut:
         if settings.DEMO_MODE:
             return self._get_mock_heatmap(venue_id)
-            
+
         try:
             zones_result = await self.db.execute(select(Zone).where(Zone.venue_id == venue_id))
             zones = zones_result.scalars().all()
-            
+
             points = []
             for zone in zones:
                 stmt = select(CrowdSnapshot).where(CrowdSnapshot.zone_id == zone.id).order_by(desc(CrowdSnapshot.recorded_at)).limit(1)
                 snap_result = await self.db.execute(stmt)
                 latest_snap = snap_result.scalar_one_or_none()
-                
+
                 if latest_snap and latest_snap.density_score > 0:
                     points.append(CrowdHeatmapPoint(
                         latitude=zone.latitude,
                         longitude=zone.longitude,
                         weight=latest_snap.density_score
                     ))
-                    
+
             return VenueHeatmapOut(
                 venue_id=venue_id,
                 points=points,
@@ -225,9 +231,9 @@ class CrowdService:
     async def get_historical(self, zone_id: UUID, hours: int = 24) -> list[CrowdSnapshotOut]:
         from datetime import timedelta
         cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
-        
+
         stmt = select(CrowdSnapshot).where(CrowdSnapshot.zone_id == zone_id, CrowdSnapshot.recorded_at >= cutoff).order_by(CrowdSnapshot.recorded_at)
         result = await self.db.execute(stmt)
         snapshots = result.scalars().all()
-        
+
         return [CrowdSnapshotOut.model_validate(s) for s in snapshots]

@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, Dict, List
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_db, limiter
 from app.models.alert import Alert
-from app.services.translate_service import TranslateService, SUPPORTED_LANGS
+from app.services.translate_service import SUPPORTED_LANGS, TranslateService
 
 router = APIRouter()
 translate_service = TranslateService()
@@ -30,10 +31,10 @@ async def translate_text(
     """Translate arbitrary string text to a target language."""
     if req_data.target_lang not in SUPPORTED_LANGS:
         raise HTTPException(status_code=400, detail=f"Unsupported language. Supported: {SUPPORTED_LANGS}")
-        
+
     translated = await translate_service.translate_text(
-        req_data.text, 
-        req_data.target_lang, 
+        req_data.text,
+        req_data.target_lang,
         req_data.source_lang
     )
     return {
@@ -52,17 +53,17 @@ async def retranslate_alert(
     alert = await db.get(Alert, id)
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
-        
+
     if target_lang not in SUPPORTED_LANGS:
         raise HTTPException(status_code=400, detail="Unsupported language")
-        
+
     t_title = await translate_service.translate_text(alert.title, target_lang)
     t_msg = await translate_service.translate_text(alert.message, target_lang)
-    
+
     dict_copy = dict(alert.translated_messages) if alert.translated_messages else {}
     dict_copy[target_lang] = {"title": t_title, "message": t_msg}
     alert.translated_messages = dict_copy
-    
+
     await db.commit()
     await db.refresh(alert)
     return alert

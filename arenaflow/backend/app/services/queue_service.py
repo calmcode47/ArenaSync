@@ -1,18 +1,16 @@
 import logging
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
-from datetime import datetime, timezone, timedelta
 
-from fastapi import HTTPException
 import pandas as pd
+from fastapi import HTTPException
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.redis_client import set_cached
 from app.models.queue_entry import QueueEntry
 from app.models.zone import Zone
-from app.schemas.queue import (
-    QueueEntryCreate, QueueEntryOut, QueuePredictionOut, VenueQueueSummary
-)
-from app.core.redis_client import set_cached
+from app.schemas.queue import QueueEntryCreate, QueueEntryOut, QueuePredictionOut, VenueQueueSummary
 from app.services.ml.prophet_engine import prophet_engine
 
 logger = logging.getLogger(__name__)
@@ -41,16 +39,16 @@ class QueueService:
             actual_wait_minutes=None,
             recorded_at=datetime.now(timezone.utc)
         )
-        
+
         self.db.add(entry)
         await self.db.commit()
         await self.db.refresh(entry)
-        
+
         entry_out = QueueEntryOut.model_validate(entry)
-        
+
         cache_key = f"queue:{str(data.zone_id)}:latest"
         await set_cached(cache_key, entry_out.model_dump(mode="json"), ttl_seconds=30)
-        
+
         return entry_out
 
     async def _get_zone(self, zone_id: UUID) -> Zone:
@@ -76,7 +74,7 @@ class QueueService:
         zone = await self._get_zone(zone_id)
         if not zone:
             raise HTTPException(status_code=404, detail="Zone not found")
-            
+
         latest_queue = await self._get_latest_queue_entry(zone_id)
 
         queue_length = latest_queue.queue_length if latest_queue else 0
@@ -140,13 +138,13 @@ class QueueService:
     async def get_venue_queue_summary(self, venue_id: UUID) -> VenueQueueSummary:
         res = await self.db.execute(select(Zone).where(Zone.venue_id == venue_id))
         zones = res.scalars().all()
-        
+
         predictions = []
         for zone in zones:
             if zone.zone_type in ["gate", "concession", "restroom"]:
                 pred = await self.get_zone_prediction(zone.id)
                 predictions.append(pred)
-                
+
         if not predictions:
             return VenueQueueSummary(
                 venue_id=venue_id,

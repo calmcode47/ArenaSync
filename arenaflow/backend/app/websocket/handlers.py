@@ -6,13 +6,12 @@ import orjson
 from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_db, get_current_user
-from app.core.security import decode_access_token
-from app.websocket.manager import manager
-from app.services.crowd_service import CrowdService
-from app.services.alert_service import AlertService
-
 from app.core.config import settings
+from app.core.dependencies import get_current_user, get_db
+from app.core.security import decode_access_token
+from app.services.alert_service import AlertService
+from app.services.crowd_service import CrowdService
+from app.websocket.manager import manager
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -49,7 +48,7 @@ async def websocket_endpoint(
 
     # 2. Subscribe
     await manager.connect(websocket, venue_id)
-    
+
     try:
         venue_uuid = UUID(venue_id)
     except ValueError:
@@ -61,10 +60,10 @@ async def websocket_endpoint(
     try:
         crowd_service = CrowdService(db)
         alert_service = AlertService(db)
-        
+
         crowd_summary = await crowd_service.get_venue_summary(venue_uuid)
         active_alerts = await alert_service.get_active_alerts(venue_uuid)
-        
+
         await manager.send_personal(websocket, "initial_state", {
             "crowd": crowd_summary.model_dump(mode="json"),
             "alerts": [a.model_dump(mode="json") for a in active_alerts]
@@ -102,16 +101,16 @@ async def websocket_endpoint(
             try:
                 payload = orjson.loads(data)
                 event_type = payload.get("event")
-                
+
                 if event_type == "pong":
                     last_pong_time = loop.time()
                 elif event_type == "crowd_update":
                     # staff update handler
                     await manager.broadcast_to_venue(venue_id, "crowd_update", payload.get("data", {}))
-                    
+
             except orjson.JSONDecodeError:
                 logger.warning("Received invalid JSON on websocket")
-                
+
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected from {venue_id}")
     finally:

@@ -1,9 +1,10 @@
 import asyncio
+import logging
+
 import httpx
 from fastapi import HTTPException
-from geopy.geocoders import Nominatim
 from geopy.exc import GeopyError
-import logging
+from geopy.geocoders import Nominatim
 
 from app.core.config import settings
 
@@ -39,23 +40,23 @@ class MapsService:
         try:
             # mode mapping for OSRM
             osrm_mode = "foot" if mode == "walking" else "car"
-            
+
             # OSRM format: lng,lat;lng,lat
             coords = f"{origin[1]},{origin[0]};{destination[1]},{destination[0]}"
             url = f"{self.osrm_base_url}/{osrm_mode}/{coords}?overview=full&steps=true"
-            
+
             async with httpx.AsyncClient() as client:
                 response = await client.get(url, timeout=10.0)
                 if response.status_code != 200:
                     raise Exception(f"OSRM error: {response.text}")
-                
+
                 data = response.json()
                 if not data.get('routes'):
                     return {}
-                
+
                 route = data['routes'][0]
                 leg = route['legs'][0]
-                
+
                 return {
                     "distance": f"{leg['distance'] / 1000:.1f} km",
                     "duration": f"{leg['duration'] / 60:.0f} mins",

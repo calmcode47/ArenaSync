@@ -6,8 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.dependencies import get_db, limiter
 from app.core.config import settings
+from app.core.dependencies import get_db, limiter
 from app.models.venue import Venue
 from app.schemas.venue import VenueOut
 from app.services.maps_service import MapsService
@@ -16,6 +16,7 @@ router = APIRouter()
 maps_service = MapsService()
 
 from datetime import datetime
+
 DEMO_VENUE_DATA = {
     "id": "00000000-0000-0000-0000-000000000000",
     "name": "Madison Square Garden",
@@ -72,7 +73,7 @@ async def get_venue(
 ) -> Any:
     if settings.DEMO_MODE:
         return DEMO_VENUE_DATA
-        
+
     try:
         result = await db.execute(
             select(Venue)

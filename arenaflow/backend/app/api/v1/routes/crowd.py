@@ -4,9 +4,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_db, get_current_user, limiter
+from app.core.dependencies import get_current_user, get_db, limiter
 from app.models.user import User
-from app.schemas.crowd import CrowdSnapshotCreate, CrowdSnapshotOut, VenueCrowdSummary, VenueHeatmapOut
+from app.schemas.crowd import (
+    CrowdSnapshotCreate,
+    CrowdSnapshotOut,
+    VenueCrowdSummary,
+    VenueHeatmapOut,
+)
 from app.services.crowd_service import CrowdService
 from app.services.ml.crowd_model import CrowdDensityModel
 
@@ -71,22 +76,22 @@ async def predict_zone_congestion(
     snapshots = await service.get_historical(zone_id, hours=1)
     if not snapshots:
         raise HTTPException(status_code=404, detail="Insufficient historical data for prediction")
-        
+
     latest = snapshots[-1]
-    
+
     current_features = {
         "hour_of_day": latest.recorded_at.hour,
         "day_of_week": latest.recorded_at.weekday(),
         "current_count": latest.current_count,
-        "capacity": 1000, 
+        "capacity": 1000,
         "prev_density_score": latest.density_score
     }
-    
+
     from app.services.ml.crowd_model import crowd_model
     if not crowd_model.is_fitted:
         # In a real deployed app, model is loaded at startup
         return {"status": "Model not yet trained. Prediction unavailable."}
-        
+
     try:
         return crowd_model.predict_next_hour(str(zone_id), current_features)
     except Exception as e:

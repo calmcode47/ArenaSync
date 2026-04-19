@@ -1,7 +1,9 @@
-from pydantic import BaseModel, ConfigDict
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
+
 
 class JoinVirtualQueueRequest(BaseModel):
     zone_id: UUID
@@ -17,7 +19,7 @@ class VirtualQueueEntryOut(BaseModel):
     estimated_call_time: datetime
     created_at: datetime
     zone_name: Optional[str] = None
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 class VirtualQueueStatusOut(BaseModel):

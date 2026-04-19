@@ -1,7 +1,9 @@
-from pydantic import BaseModel, ConfigDict
-from uuid import UUID
 from datetime import datetime
 from typing import List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
+
 
 class QueueEntryCreate(BaseModel):
     zone_id: UUID
@@ -18,7 +20,7 @@ class QueueEntryOut(BaseModel):
     actual_wait_minutes: Optional[float] = None
     service_rate: float
     recorded_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 

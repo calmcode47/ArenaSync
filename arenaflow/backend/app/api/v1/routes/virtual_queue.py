@@ -1,11 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from app.core.dependencies import get_current_user, limiter, require_role, get_db
-from app.schemas.virtual_queue import JoinVirtualQueueRequest, VirtualQueueEntryOut, VirtualQueueStatusOut, CallNextOut, VirtualQueueSummaryOut, CallNextRequest
-from app.services.virtual_queue_service import VirtualQueueService
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.dependencies import get_current_user, get_db, limiter, require_role
 from app.models.user import User
+from app.schemas.virtual_queue import (
+    CallNextOut,
+    CallNextRequest,
+    JoinVirtualQueueRequest,
+    VirtualQueueEntryOut,
+    VirtualQueueStatusOut,
+    VirtualQueueSummaryOut,
+)
+from app.services.virtual_queue_service import VirtualQueueService
 
 router = APIRouter()
 service = VirtualQueueService()

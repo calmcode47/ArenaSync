@@ -1,17 +1,18 @@
 import logging
-from uuid import UUID
 from datetime import datetime, timezone
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
-from fastapi import HTTPException
+from uuid import UUID
 
+from fastapi import HTTPException
+from sqlalchemy import desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import settings
+from app.core.firebase import send_fcm_notification
+from app.core.redis_client import publish_event
 from app.models.alert import Alert
 from app.models.user import User
-from app.schemas.alert import AlertCreate, AlertOut, AlertBroadcast
+from app.schemas.alert import AlertBroadcast, AlertCreate, AlertOut
 from app.services.translate_service import TranslateService
-from app.core.redis_client import publish_event
-from app.core.firebase import send_fcm_notification
-from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ class AlertService:
                     )
                     if success:
                         sent_count += 1
-                
+
                 if sent_count > 0:
                     alert.fcm_sent = True
                     # No need to commit here, we commit at the end
@@ -82,7 +83,7 @@ class AlertService:
             zone_id=out.zone_id,
             timestamp=out.created_at
         )
-        
+
         await publish_event(f"alerts:{str(data.venue_id)}", broadcast_data.model_dump(mode="json"), event_type="alert_created")
         return out
 
@@ -90,11 +91,11 @@ class AlertService:
         alert = await self.db.get(Alert, alert_id)
         if not alert:
             return False
-        
+
         venue_id = alert.venue_id
         await self.db.delete(alert)
         await self.db.commit()
-        
+
         await publish_event(f"alerts:{str(venue_id)}", {"alert_id": str(alert_id)}, event_type="alert_deleted")
         return True
 
@@ -112,10 +113,10 @@ class AlertService:
         alert = await self.db.get(Alert, alert_id)
         if not alert:
             raise HTTPException(status_code=404, detail="Alert not found")
-            
+
         alert.is_resolved = True
         alert.resolved_at = datetime.now(timezone.utc)
-        
+
         await self.db.commit()
         await self.db.refresh(alert)
         return AlertOut.model_validate(alert)
@@ -128,7 +129,7 @@ class AlertService:
             desc(Alert.severity),
             desc(Alert.created_at)
         )
-        
+
         res = await self.db.execute(stmt)
         alerts = res.scalars().all()
         return [AlertOut.model_validate(a) for a in alerts]
@@ -168,7 +169,7 @@ class AlertService:
     async def auto_alert_from_crowd(self, zone_id: UUID, venue_id: UUID, congestion_level: str) -> None:
         if congestion_level not in ["high", "critical"]:
             return
-            
+
         stmt = select(Alert).where(
             Alert.zone_id == zone_id,
             Alert.alert_type == "overcrowding",
@@ -177,7 +178,7 @@ class AlertService:
         res = await self.db.execute(stmt)
         if res.scalars().first() is not None:
             return
-            
+
         alert_data = AlertCreate(
             venue_id=venue_id,
             zone_id=zone_id,

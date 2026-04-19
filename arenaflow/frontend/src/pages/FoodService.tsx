@@ -161,7 +161,7 @@ const FoodService: React.FC = () => {
                 
                 <button
                   onClick={() => {
-                    addItem({ ...item });
+                    addItem({ ...item, image: item.image_url });
                     toast.success(`Added ${item.name} to cart`);
                   }}
                   className="w-full py-3 bg-white text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-blue-400 transition-colors"

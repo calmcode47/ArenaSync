@@ -1,7 +1,9 @@
-from pydantic import BaseModel, ConfigDict, EmailStr
-from uuid import UUID
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, EmailStr
+
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -21,7 +23,7 @@ class UserOut(UserBase):
     role: str
     is_active: bool
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 class TokenOut(BaseModel):

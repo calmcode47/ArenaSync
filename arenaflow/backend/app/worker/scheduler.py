@@ -1,8 +1,9 @@
 import logging
 import uuid
 from datetime import datetime, timedelta
-from arq import cron
+
 import aioredis
+from arq import cron
 
 from app.core.config import settings
 

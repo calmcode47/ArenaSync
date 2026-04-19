@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, List
 from uuid import UUID
 
-from app.core.dependencies import get_db, get_current_user, limiter
-from app.models.user import User
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.dependencies import get_current_user, get_db, limiter
 from app.models.alert import Alert
+from app.models.user import User
 from app.schemas.alert import AlertCreate, AlertOut, AlertUpdate
 from app.services.alert_service import AlertService
 
@@ -74,5 +75,5 @@ async def delete_alert(
     success = await service.delete_alert(alert_id)
     if not success:
         raise HTTPException(status_code=404, detail="Alert not found")
-        
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)

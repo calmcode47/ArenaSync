@@ -1,6 +1,8 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator
 from typing import List, Union
+
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     APP_ENV: str = "development"
@@ -8,19 +10,19 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-    
+
     DATABASE_URL: str
     DATABASE_MIGRATION_URL: str | None = None  # Used by Alembic only; falls back to DATABASE_URL if not set
-    
+
     UPSTASH_REDIS_REST_URL: str
     UPSTASH_REDIS_REST_TOKEN: str
-    
+
     FIREBASE_CREDENTIALS_PATH: str
     FIREBASE_PROJECT_ID: str
-    
+
     GOOGLE_MAPS_API_KEY: str
     GOOGLE_TRANSLATE_API_KEY: str
-    
+
     ALLOWED_ORIGINS: Union[List[str], str] = ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"]
     DEMO_MODE: bool = True
 
@@ -32,9 +34,9 @@ class Settings(BaseSettings):
         elif isinstance(v, (list, str)):
             return v
         raise ValueError(v)
-    
+
     DEMO_VENUE_ID: str | None = None
-    
+
     ADMIN_EMAIL: str = "admin@arenaflow.com"
     ADMIN_PASSWORD: str = "admin"
 

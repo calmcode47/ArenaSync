@@ -1,11 +1,13 @@
 import uuid
 from datetime import datetime
-from typing import List, Any
-from sqlalchemy import String, Boolean, DateTime, Float, Integer, ForeignKey, Enum, func
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from typing import Any, List
+
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, func
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+
 
 class Zone(Base):
     __tablename__ = "zones"

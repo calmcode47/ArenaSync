@@ -1,7 +1,8 @@
-from contextlib import asynccontextmanager
 import asyncio
 import logging
 import uuid
+from contextlib import asynccontextmanager
+
 import bcrypt
 
 # Monkeypatch bcrypt for passlib compatibility in newer Python/bcrypt versions
@@ -11,24 +12,26 @@ if not hasattr(bcrypt, "__about__"):
     bcrypt.__about__ = About()
 
 from app.core.logger import setup_logging
+
 setup_logging()
 
 logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import settings
-from app.services.ml.prophet_engine import prophet_engine
 from app.core.dependencies import limiter
 from app.db.init_db import init_db
 from app.db.session import engine
+from app.services.ml.prophet_engine import prophet_engine
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -55,11 +58,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 async def lifespan(app: FastAPI):
     # Startup actions
     await init_db()
-    
+
     # Init Firebase singleton
     from app.core.firebase import firebase_client
     _ = firebase_client
-    
+
     # Prophet warmup — run in background, do not block startup
     async def _warmup():
         try:
@@ -73,9 +76,9 @@ async def lifespan(app: FastAPI):
             logger.warning(f"Prophet warmup failed (non-critical): {e}")
 
     asyncio.create_task(_warmup())
-    
+
     yield
-    
+
     # Shutdown actions
     await engine.dispose()
 
@@ -113,11 +116,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     body = exc.body
     if not isinstance(body, (str, dict, list, int, float, bool, type(None))):
         body = str(body)
-        
+
     import logging
     logger = logging.getLogger(__name__)
     logger.warning(f"Validation error: {exc.errors()}\nBody: {body}")
-        
+
     return JSONResponse(
         status_code=422,
         content={"detail": exc.errors(), "body": body}
@@ -133,7 +136,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
 # Placeholders for future routers
 # from app.api.v1 import routes as v1_routes
-from app.api.v1.routes import alerts, auth, crowd, health, maps, ml, queue, virtual_queue, food
+from app.api.v1.routes import alerts, auth, crowd, food, health, maps, ml, queue, virtual_queue
 from app.websocket import handlers as websocket_handlers
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])

@@ -1,7 +1,9 @@
-import logging
 import asyncio
-from google.cloud import translate_v2 as translate
+import logging
+
 from fastapi import HTTPException
+from google.cloud import translate_v2 as translate
+
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -20,7 +22,7 @@ class TranslateService:
         if not self.client:
             logger.warning("Translation service unavailable, returning original text")
             return text
-            
+
         try:
             result = await asyncio.to_thread(
                 self.client.translate,
@@ -35,23 +37,23 @@ class TranslateService:
 
     async def translate_alert(self, title: str, message: str) -> dict:
         results = {}
-        
+
         async def trans_task(lang: str):
             t_title = await self.translate_text(title, lang)
             t_msg = await self.translate_text(message, lang)
             return lang, {"title": t_title, "message": t_msg}
-            
+
         try:
             tasks = [trans_task(lang) for lang in SUPPORTED_LANGS]
             completed = await asyncio.gather(*tasks, return_exceptions=True)
-            
+
             for index, res in enumerate(completed):
                 if isinstance(res, Exception):
                     logger.error(f"Failed translation for lang {SUPPORTED_LANGS[index]}: {res}")
                 else:
                     lang, trans_data = res
                     results[lang] = trans_data
-                    
+
             return results
         except Exception as e:
             logger.error(f"Batch translation failed: {e}")

@@ -1,17 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
 import time
 from datetime import datetime, timezone
-from typing import Dict, Any
+from typing import Any, Dict
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.dependencies import get_db, limiter
-from app.core.redis_client import redis
 from app.core.firebase import firebase_app
-from app.services.ml.prophet_engine import prophet_engine
+from app.core.redis_client import redis
+
 # We'll try to import a global instance if we create it, or just use the class status
 from app.services.ml.crowd_model import CrowdDensityModel
+from app.services.ml.prophet_engine import prophet_engine
 
 router = APIRouter()
 
@@ -31,7 +33,7 @@ async def detailed_health_check(
     Checks connections to Database, Redis, Firebase, and ML engines.
     """
     start_time = time.time()
-    
+
     # 1. Database Check
     db_status = "ok"
     db_latency = 0.0
@@ -40,9 +42,9 @@ async def detailed_health_check(
         # Use a short timeout for health check
         await db.execute(text("SELECT 1"))
         db_latency = (time.time() - db_start) * 1000
-    except Exception as e:
+    except Exception:
         db_status = "error"
-    
+
     # 2. Redis Check
     redis_status = "ok"
     redis_latency = 0.0

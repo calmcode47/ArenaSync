@@ -1,11 +1,13 @@
 import uuid
 from datetime import datetime
-from typing import Optional, List, Any
-from sqlalchemy import String, Boolean, DateTime, Float, Integer, func
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from typing import Any, List, Optional
+
+from sqlalchemy import Boolean, DateTime, Float, Integer, String, func
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+
 
 class Venue(Base):
     __tablename__ = "venues"

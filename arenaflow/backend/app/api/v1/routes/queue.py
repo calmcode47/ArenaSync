@@ -1,12 +1,12 @@
 from typing import Any
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_db, get_current_user, limiter
-from app.models.user import User
+from app.core.dependencies import get_current_user, get_db, limiter
 from app.models.queue_entry import QueueEntry
+from app.models.user import User
 from app.schemas.queue import QueueEntryCreate, QueueEntryOut, QueuePredictionOut, VenueQueueSummary
 from app.services.queue_service import QueueService
 
@@ -60,7 +60,7 @@ async def update_actual_wait(
     entry = await db.get(QueueEntry, entry_id)
     if not entry:
         raise HTTPException(status_code=404, detail="Queue entry not found")
-        
+
     entry.actual_wait_minutes = actual_wait_minutes
     await db.commit()
     await db.refresh(entry)

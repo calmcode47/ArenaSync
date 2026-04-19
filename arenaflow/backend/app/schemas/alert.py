@@ -1,7 +1,9 @@
-from pydantic import BaseModel, ConfigDict
-from uuid import UUID
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
+
 
 class AlertCreate(BaseModel):
     venue_id: UUID
@@ -23,7 +25,7 @@ class AlertOut(BaseModel):
     is_resolved: bool
     fcm_sent: bool
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 class AlertUpdate(BaseModel):
