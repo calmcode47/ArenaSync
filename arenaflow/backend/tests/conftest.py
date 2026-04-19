@@ -8,18 +8,18 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from typing import AsyncGenerator
 
 # Set test environment constraints before imports evaluate
-os.environ["APP_ENV"] = "test"
-os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:postgres@localhost:5432/arenaflow_test"
-os.environ["DATABASE_MIGRATION_URL"] = "postgresql+psycopg2://postgres:postgres@localhost:5432/arenaflow_test"
-os.environ["SECRET_KEY"] = "test_super_secret_key"
-os.environ["ALGORITHM"] = "HS256"
-os.environ["UPSTASH_REDIS_REST_URL"] = "https://example.upstash.io"
-os.environ["UPSTASH_REDIS_REST_TOKEN"] = "test_token"
-os.environ["FIREBASE_CREDENTIALS_PATH"] = "/tmp/test-firebase.json"
-os.environ["FIREBASE_PROJECT_ID"] = "test-project"
-os.environ["GOOGLE_MAPS_API_KEY"] = "test_maps_key"
-os.environ["GOOGLE_TRANSLATE_API_KEY"] = "test_translate_key"
-os.environ["ALLOWED_ORIGINS"] = "[\"http://localhost:5173\"]"
+os.environ.setdefault("APP_ENV", "test")
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/arenaflow_test")
+os.environ.setdefault("DATABASE_MIGRATION_URL", "postgresql+psycopg2://postgres:postgres@localhost:5432/arenaflow_test")
+os.environ.setdefault("SECRET_KEY", "test_super_secret_key")
+os.environ.setdefault("ALGORITHM", "HS256")
+os.environ.setdefault("UPSTASH_REDIS_REST_URL", "https://example.upstash.io")
+os.environ.setdefault("UPSTASH_REDIS_REST_TOKEN", "test_token")
+os.environ.setdefault("FIREBASE_CREDENTIALS_PATH", "/tmp/test-firebase.json")
+os.environ.setdefault("FIREBASE_PROJECT_ID", "test-project")
+os.environ.setdefault("GOOGLE_MAPS_API_KEY", "test_maps_key")
+os.environ.setdefault("GOOGLE_TRANSLATE_API_KEY", "test_translate_key")
+os.environ.setdefault("ALLOWED_ORIGINS", "[\"http://localhost:5173\"]")
 
 from app.core.config import settings
 from app.db.session import Base, get_db
