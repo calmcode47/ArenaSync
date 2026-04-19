@@ -1,6 +1,9 @@
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .zone import Zone
 
 from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, func
 from sqlalchemy.dialects.postgresql import UUID

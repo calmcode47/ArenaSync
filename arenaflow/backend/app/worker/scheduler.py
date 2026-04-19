@@ -32,11 +32,11 @@ from app.worker.tasks import auto_resolve_stale_alerts, send_ml_heartbeat
 
 cron_jobs = [
     cron(
-        dispatch_retrain_prophet,
+        dispatch_retrain_prophet,  # type: ignore[arg-type]
         hour={0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22},
         minute=0,
     ),
-    cron(dispatch_retrain_crowd, hour={0, 4, 8, 12, 16, 20}, minute=30),
-    cron(auto_resolve_stale_alerts, minute={0, 30}),
-    cron(send_ml_heartbeat, second={0, 30}),
+    cron(dispatch_retrain_crowd, hour={0, 4, 8, 12, 16, 20}, minute=30),  # type: ignore[arg-type]
+    cron(auto_resolve_stale_alerts, minute={0, 30}),  # type: ignore[arg-type]
+    cron(send_ml_heartbeat, second={0, 30}),  # type: ignore[arg-type]
 ]

@@ -1,9 +1,12 @@
 import secrets
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional, TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String
+if TYPE_CHECKING:
+    from .user import User
+
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, func
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 

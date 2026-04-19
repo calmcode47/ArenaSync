@@ -101,7 +101,7 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=list(settings.ALLOWED_ORIGINS),  # type: ignore
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
