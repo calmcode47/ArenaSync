@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Sparkles, ShieldAlert, Zap, TrendingUp } from 'lucide-react';
+import { Brain, Sparkles, Shield, Zap, TrendingUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../api/client';
 
@@ -95,7 +95,7 @@ const GeminiInsights: React.FC<GeminiInsightsProps> = ({ venueId }) => {
 
                 <div>
                     <div className="flex items-center gap-2 mb-2 text-[10px] font-rajdhani font-bold text-[#ff3355] tracking-widest uppercase">
-                        <ShieldAlert className="w-3 h-3" />
+                        <Shield className="w-3 h-3" />
                         Tactical Recommendations
                     </div>
                     <ul className="space-y-2">
