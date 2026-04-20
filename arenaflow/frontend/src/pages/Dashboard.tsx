@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Brain, Activity, Target, Shield, Clock, AlertTriangle, Info, ChevronDown, CheckCircle2, Car, Coffee, DoorOpen, LogOut } from 'lucide-react';
+import { Brain, Activity, Target, ChevronDown, Car, Coffee, DoorOpen } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import api from '../api/client';
@@ -39,25 +39,6 @@ const AnimatedNumber = ({ value }: { value: number }) => {
     return <span>{display.toLocaleString()}</span>;
 };
 
-/** Radial Progress SVG Component */
-const RadialProgress = ({ percentage, color }: { percentage: number, color: string }) => {
-    const radius = 16;
-    const circumference = 2 * Math.PI * radius;
-    const strokeDashoffset = circumference - (percentage / 100) * circumference;
-    
-    return (
-        <svg width="40" height="40" className="rotate-[-90deg]">
-            <circle cx="20" cy="20" r={radius} stroke="rgba(255,255,255,0.1)" strokeWidth="2" fill="none" />
-            <circle 
-                cx="20" cy="20" r={radius} 
-                stroke={color} strokeWidth="2" fill="none" 
-                strokeDasharray={circumference} 
-                strokeDashoffset={strokeDashoffset}
-                className="transition-all duration-1000 ease-out"
-            />
-        </svg>
-    );
-};
 
 /** Mini SVG Sparkline Component */
 const MiniSparkline = ({ data, color }: { data: number[], color: string }) => {

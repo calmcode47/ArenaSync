@@ -8,8 +8,15 @@ interface GeminiInsightsProps {
     venueId: string;
 }
 
+interface GeminiResponse {
+    strategic_summary: string;
+    critical_recommendations: string[];
+    efficiency_score: number;
+    staff_maneuver: string;
+}
+
 const GeminiInsights: React.FC<GeminiInsightsProps> = ({ venueId }) => {
-    const { data: insights, isLoading, isError } = useQuery({
+    const { data: insights, isLoading, isError } = useQuery<GeminiResponse>({
         queryKey: ['gemini_insights', venueId],
         queryFn: async () => {
             const res = await api.get(`/ml/insights/${venueId}`);
