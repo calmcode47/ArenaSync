@@ -38,26 +38,34 @@ function GlobeIntro({ lat, lng }: { lat: number, lng: number }) {
     const y = (r * Math.cos(phi));
 
     useEffect(() => {
+        // Safety check for NaN or extreme coordinates to prevent camera crash
+        const safeLat = isNaN(lat) ? 0 : lat;
+        const safeLng = isNaN(lng) ? 0 : lng;
+
         camera.position.set(0, 2, 18);
         camera.lookAt(0, 0, 0);
 
-        gsap.to(camera.position, {
-            z: 9,
-            y: 1,
-            duration: 1.8,
-            delay: 0.3,
-            ease: "power2.inOut"
+        const ctx = gsap.context(() => {
+            gsap.to(camera.position, {
+                z: 9,
+                y: 1,
+                duration: 1.8,
+                delay: 0.3,
+                ease: "power2.inOut"
+            });
+            
+            if (globeRef.current) {
+                const angle = Math.atan2(x, z);
+                gsap.to(globeRef.current.rotation, {
+                    y: angle,
+                    duration: 1.8,
+                    delay: 0.3,
+                    ease: "power2.inOut"
+                });
+            }
         });
-        
-        if (globeRef.current) {
-             const angle = Math.atan2(x, z);
-             gsap.to(globeRef.current.rotation, {
-                 y: angle,
-                 duration: 1.8,
-                 delay: 0.3,
-                 ease: "power2.inOut"
-             });
-        }
+
+        return () => ctx.revert(); // Cleanup GSAP context
     }, [camera, x, z]);
 
     useFrame((state) => {
@@ -121,10 +129,22 @@ const createCustomIcon = (color: string) => L.divIcon({
 function MapController({ center, zoom }: { center: [number, number], zoom: number }) {
     const map = useMap();
     useEffect(() => {
-        if (center[0] !== 0) {
-            map.flyTo(center, zoom, { duration: 1.5, easeLinearity: 0.25 });
+        if (center[0] !== 0 && center[1] !== 0) {
+            map.flyTo(center, zoom, { 
+                duration: 1.5, 
+                easeLinearity: 0.25,
+                noMoveStart: true
+            });
         }
     }, [center, zoom, map]);
+    
+    // Force invalidation of size to fix rendering issues in flex containers
+    useEffect(() => {
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 400);
+    }, [map]);
+    
     return null;
 }
 
@@ -176,20 +196,36 @@ export default function LiveMap() {
         }
     }, [venue]);
 
+    // Robust Intro Lifecycle
     useEffect(() => {
-        const hasShown = sessionStorage.getItem("arenaflow_map_intro_shown");
-        if (hasShown) return;
+        const hasShown = sessionStorage.getItem(`intro_shown_${venueId}`);
+        if (hasShown) {
+            setShowGlobe(false);
+            return;
+        }
 
         setShowGlobe(true);
-        sessionStorage.setItem("arenaflow_map_intro_shown", "true");
-        const t1 = setTimeout(() => setIntroText("LOCALIZING ASSETS"), 1500);
-        const t2 = setTimeout(() => setShowGlobe(false), 3000);
+        sessionStorage.setItem(`intro_shown_${venueId}`, "true");
+        
+        const sequence = [
+            { text: "CALIBRATING GEOSPATIAL ENGINE...", delay: 0 },
+            { text: "ACQUIRING VENUE COORDINATES...", delay: 800 },
+            { text: "LOCALIZING ASSETS...", delay: 2000 },
+            { text: "INITIALIZING COMMAND...", delay: 2800 },
+            { finish: true, delay: 3500 }
+        ];
+
+        const timeouts = sequence.map(step => 
+            setTimeout(() => {
+                if (step.text) setIntroText(step.text);
+                if (step.finish) setShowGlobe(false);
+            }, step.delay)
+        );
         
         return () => { 
-            clearTimeout(t1); 
-            clearTimeout(t2); 
+            timeouts.forEach(t => clearTimeout(t)); 
         };
-    }, []);
+    }, [venueId]);
 
     useEffect(() => {
         const now = new Date();
@@ -210,12 +246,39 @@ export default function LiveMap() {
         <div className="w-full h-[calc(100vh-64px)] flex bg-[#0a0a0f] text-white">
             
             {/* Globe Intro Overlay */}
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
                 {showGlobe && (
-                    <motion.div exit={{ opacity: 0 }} transition={{ duration: 0.6 }} className="absolute inset-0 z-[1000] bg-[#0a0a0f]">
-                        <Canvas><GlobeIntro lat={mapCenter[0]} lng={mapCenter[1]} /></Canvas>
-                        <div className="absolute top-12 left-1/2 -translate-x-1/2 text-center">
-                            <motion.div key={introText} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[12px] font-rajdhani font-bold tracking-[0.3em] text-[#00d4ff] uppercase">{introText}</motion.div>
+                    <motion.div 
+                        initial={{ opacity: 1 }}
+                        exit={{ opacity: 0, scale: 1.05 }} 
+                        transition={{ duration: 0.8, ease: "easeInOut" }} 
+                        className="absolute inset-0 z-[1000] bg-[#0a0a0f] flex items-center justify-center"
+                    >
+                        <div className="absolute inset-0">
+                            <Canvas dpr={[1, 2]} gl={{ antialias: true }}>
+                                <GlobeIntro lat={mapCenter[0]} lng={mapCenter[1]} />
+                            </Canvas>
+                        </div>
+                        
+                        <div className="relative z-[1001] flex flex-col items-center gap-8">
+                            <motion.div 
+                                key={introText} 
+                                initial={{ opacity: 0, y: 10 }} 
+                                animate={{ opacity: 1, y: 0 }} 
+                                className="text-[12px] font-rajdhani font-bold tracking-[0.4em] text-[#00d4ff] uppercase text-center"
+                            >
+                                {introText}
+                            </motion.div>
+                            
+                            <motion.button
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 2 }}
+                                onClick={() => setShowGlobe(false)}
+                                className="px-6 py-2 border border-[#00d4ff]/30 rounded-full text-[9px] font-mono tracking-widest text-[#00d4ff]/60 hover:text-[#00d4ff] hover:border-[#00d4ff] transition-all bg-black/40 backdrop-blur-sm"
+                            >
+                                FORCE INITIALIZE [ SKIP ]
+                            </motion.button>
                         </div>
                     </motion.div>
                 )}

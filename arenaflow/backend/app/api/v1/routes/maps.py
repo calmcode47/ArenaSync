@@ -66,6 +66,60 @@ DEMO_VENUE_DATA = {
     ],
 }
 
+DEMO_VENUES_LIST = [
+    {
+        "id": "00000000-0000-0000-0000-000000000000",
+        "name": "Madison Square Garden",
+        "city": "New York",
+        "country": "USA",
+        "total_capacity": 19500,
+        "latitude": 40.7505,
+        "longitude": -73.9934,
+        "is_active": True,
+    },
+    {
+        "id": "44444444-4444-4444-4444-444444444444",
+        "name": "Crypto.com Arena",
+        "city": "Los Angeles",
+        "country": "USA",
+        "total_capacity": 20000,
+        "latitude": 34.0430,
+        "longitude": -118.2673,
+        "is_active": True,
+    },
+    {
+        "id": "55555555-5555-5555-5555-555555555555",
+        "name": "SoFi Stadium",
+        "city": "Inglewood",
+        "country": "USA",
+        "total_capacity": 70240,
+        "latitude": 33.9535,
+        "longitude": -118.3390,
+        "is_active": True,
+    },
+]
+
+
+@router.get("/venues")
+async def list_venues(
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Fetch all available venues."""
+    if settings.DEMO_MODE:
+        return DEMO_VENUES_LIST
+
+    try:
+        result = await db.execute(select(Venue).where(Venue.is_active == True))
+        venues = result.scalars().all()
+        # Fallback to demo list if DB is empty to ensure a good UX
+        if not venues:
+            return DEMO_VENUES_LIST
+        return venues
+    except Exception as e:
+        if settings.DEMO_MODE:
+            return DEMO_VENUES_LIST
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/venue/{venue_id}", response_model=VenueOut)
 async def get_venue(

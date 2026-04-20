@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, Callable
+from typing import AsyncGenerator, Callable, List, Optional
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
@@ -38,7 +38,7 @@ async def get_current_user(
     if not isinstance(subject, str) or not subject:
         raise credentials_exception
 
-    user: User | None = None
+    user: Optional[User] = None
     try:
         user_id = UUID(subject)
         user = await db.get(User, user_id)
@@ -61,7 +61,7 @@ async def get_current_admin(current_user: User = Depends(get_current_user)) -> U
     return current_user
 
 
-def require_role(roles: list[str]) -> Callable[[User], User]:
+def require_role(roles: List[str]) -> Callable[[User], User]:
     async def _require_role(current_user: User = Depends(get_current_user)) -> User:
         if current_user.role not in roles:
             raise HTTPException(

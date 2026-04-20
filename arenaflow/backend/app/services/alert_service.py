@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timezone
+from typing import List, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -23,7 +24,7 @@ class AlertService:
         self.translate_service = TranslateService()
 
     async def create_alert(
-        self, data: AlertCreate, created_by: UUID | None
+        self, data: AlertCreate, created_by: Optional[UUID]
     ) -> AlertOut:
         try:
             translated_dict = await self.translate_service.translate_alert(

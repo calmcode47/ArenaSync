@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Optional
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     DATABASE_URL: str
-    DATABASE_MIGRATION_URL: str | None = (
+    DATABASE_MIGRATION_URL: Optional[str] = (
         None  # Used by Alembic only; falls back to DATABASE_URL if not set
     )
 
@@ -30,19 +30,21 @@ class Settings(BaseSettings):
         "http://localhost:5174",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
+        "https://flowarena-694a7.web.app",
+        "https://flowarena-694a7.firebaseapp.com",
     ]
     DEMO_MODE: bool = True
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",") if i.strip()]
         elif isinstance(v, (list, str)):
             return v
-        raise ValueError(v)
+        return ["*"]
 
-    DEMO_VENUE_ID: str | None = None
+    DEMO_VENUE_ID: Optional[str] = None
 
     ADMIN_EMAIL: str = "admin@arenaflow.com"
     ADMIN_PASSWORD: str = "admin"

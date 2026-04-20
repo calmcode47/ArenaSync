@@ -74,93 +74,10 @@ function PageTransition({ children }: { children: React.ReactNode }) {
     );
 }
 
-function VenueSelectorModal() {
-    const { venueId, setVenueId, setCurrentUser } = useVenueStore();
-    const [inputVal, setInputVal] = useState("");
-    const [error, setError] = useState("");
-    const [isExpandedAuth, setIsExpandedAuth] = useState(false);
-    
-    // Auth logic
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-
-    if (venueId) return null;
-
-    const handleBoot = () => {
-        const trimmed = inputVal.trim();
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(trimmed)) {
-            setError("Please enter a valid venue ID");
-            return;
-        }
-        setError("");
-        setVenueId(trimmed);
-    };
-
-    const handleLogin = async () => {
-        try {
-            const formData = new FormData();
-            formData.append("username", email);
-            formData.append("password", password);
-            const res = await apiClient.post("/auth/login", formData, { headers: { "Content-Type": "application/x-www-form-urlencoded" } });
-            if (res.data.access_token) {
-                setToken(res.data.access_token);
-                const meRes = await apiClient.get("/auth/me");
-                setCurrentUser(meRes.data);
-                setIsExpandedAuth(false);
-            }
-        } catch (err) {
-            console.error(err);
-            setError("Login failed. Check credentials.");
-        }
-    };
-
-    return (
-        <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            className="fixed inset-0 z-[9999] bg-[#0a0a0f] backdrop-blur-md flex justify-center items-center p-4"
-        >
-            <motion.div 
-                initial={{ scale: 0.95, opacity: 0 }} 
-                animate={{ scale: 1, opacity: 1 }} 
-                className="bg-[#111118] border border-[#2a2a38] p-10 rounded-[12px] w-full max-w-[420px] shadow-2xl relative"
-            >
-                <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-[#00d4ff] to-transparent rounded-t-[12px]" />
-                <h1 className="font-rajdhani text-[36px] font-bold text-[#00d4ff] tracking-widest text-center leading-none">ARENAFLOW</h1>
-                <p className="text-center font-sans text-[14px] text-[#666688] mt-2 mb-8 uppercase tracking-widest">Smart Venue Intelligence Platform</p>
-                <div className="w-full h-[1px] bg-[#2a2a38] mb-8" />
-                <div className="mb-6">
-                    <label className="block text-[10px] text-gray-500 tracking-widest uppercase font-mono mb-2">ENTER VENUE ID</label>
-                    <input 
-                        type="text" 
-                        value={inputVal}
-                        onChange={e => setInputVal(e.target.value)}
-                        placeholder="e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                        className="w-full bg-[#1a1a24] border border-[#2a2a38] text-white focus:border-[#00d4ff] outline-none px-4 py-3 rounded text-[13px] font-mono transition"
-                    />
-                    {error && <div className="text-[11px] text-[#ff3355] mt-2 tracking-wider">{error}</div>}
-                </div>
-                <button onClick={handleBoot} className="w-full bg-[#00d4ff] text-[#0a0a0f] font-rajdhani font-bold text-[16px] tracking-widest py-3 rounded transition uppercase hover:bg-white text-center">INITIALIZE COMMAND →</button>
-                <div className="mt-6 pt-4 border-t border-[#2a2a38]">
-                    <button onClick={() => setIsExpandedAuth(!isExpandedAuth)} className="w-full text-center text-[10px] text-[#00d4ff]/60 tracking-widest uppercase hover:text-[#00d4ff] transition">STAFF LOGIN (OPTIONAL) {isExpandedAuth ? '▾' : '▸'}</button>
-                    <AnimatePresence>
-                        {isExpandedAuth && (
-                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mt-4 space-y-3">
-                                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className="w-full bg-[#1a1a24] border border-[#2a2a38] text-white outline-none px-3 py-2 rounded text-[12px]" />
-                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" className="w-full bg-[#1a1a24] border border-[#2a2a38] text-white outline-none px-3 py-2 rounded text-[12px]" />
-                                <button onClick={handleLogin} className="w-full border border-[#00d4ff] bg-[#00d4ff]/10 text-[#00d4ff] text-[12px] py-2 rounded tracking-widest uppercase hover:bg-[#00d4ff]/20">AUTHENTICATE ✓</button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-            </motion.div>
-        </motion.div>
-    );
-}
+import VenueSelector from './components/venue/VenueSelector';
 
 export default function App() {
-    const { venueId, venue, setVenue, setCurrentUser } = useVenueStore();
+    const { venueId, venue, setVenue, setCurrentUser, clearVenue } = useVenueStore();
     const [isBooting, setIsBooting] = useState(true);
 
     useEffect(() => {
@@ -180,6 +97,13 @@ export default function App() {
         boot();
     }, [venueId]);
 
+    // If venueId is cleared via sidebar, clear the venue object too
+    useEffect(() => {
+        if (!venueId && venue) {
+            setVenue(null);
+        }
+    }, [venueId, venue, setVenue]);
+
     if (isBooting) return <Loader />;
 
     return (
@@ -187,7 +111,7 @@ export default function App() {
             <MotionConfig reducedMotion="user">
                 <BrowserRouter>
                     {!venueId ? (
-                        <VenueSelectorModal />
+                        <VenueSelector />
                     ) : (
                         <div className="flex h-screen bg-[#0a0a0f] text-gray-200 overflow-hidden font-sans">
                             <Sidebar />

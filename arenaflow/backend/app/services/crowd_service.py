@@ -128,6 +128,8 @@ class CrowdService:
                         congestion_level=congestion,
                         current_count=count,
                         capacity=zone.capacity,
+                        latitude=zone.latitude,
+                        longitude=zone.longitude,
                     )
                 )
                 total_current_count += count

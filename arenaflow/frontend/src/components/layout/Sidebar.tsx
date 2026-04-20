@@ -3,8 +3,11 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Map, Clock, Bell, Info, UtensilsCrossed } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { useVenueStore } from '../../store/venueStore';
+
 const Sidebar = () => {
     const [isHovered, setIsHovered] = useState(false);
+    const { setVenueId } = useVenueStore();
 
     const routes = [
         { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -14,6 +17,10 @@ const Sidebar = () => {
         { path: '/food', label: 'Food & Drinks', icon: UtensilsCrossed },
         { path: '/about', label: 'About', icon: Info },
     ];
+
+    const handleSelectTarget = () => {
+        setVenueId(null);
+    };
 
     return (
         <motion.aside
@@ -60,7 +67,11 @@ const Sidebar = () => {
             </div>
             
             <div className="mt-auto w-full px-3">
-                <div className={`p-3 rounded-lg border border-gray-800 bg-[#1a1a24]/50 flex items-center justify-center cursor-pointer hover:border-[#00d4ff]/50 transition-colors ${isHovered ? 'w-full' : 'w-12 h-12'}`}>
+                <div 
+                    role="button"
+                    onClick={handleSelectTarget}
+                    className={`p-3 rounded-lg border border-gray-800 bg-[#1a1a24]/50 flex items-center justify-center cursor-pointer hover:border-[#00d4ff]/50 transition-colors ${isHovered ? 'w-full' : 'w-12 h-12'}`}
+                >
                     <span className="font-rajdhani font-bold text-xs text-gray-400 uppercase tracking-widest whitespace-nowrap">
                         {isHovered ? 'Select Target' : 'SEL'}
                     </span>
