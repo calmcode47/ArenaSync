@@ -33,6 +33,8 @@ class Settings(BaseSettings):
         "https://flowarena-694a7.web.app",
         "https://flowarena-694a7.firebaseapp.com",
     ]
+    # AI & Google Services
+    GOOGLE_API_KEY: Optional[str] = None
     DEMO_MODE: bool = True
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
