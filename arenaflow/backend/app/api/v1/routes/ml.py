@@ -8,7 +8,6 @@ from app.services.ml.gemini_service import gemini_service
 from app.services.ml.prophet_engine import prophet_engine
 
 router = APIRouter()
-crowd_service = CrowdService()
 
 
 @router.post("/warmup")
@@ -25,11 +24,13 @@ async def warmup_ml(payload: dict = Body(...)) -> Dict[str, Any]:
 @router.get("/insights/{venue_id}")
 async def get_insights(venue_id: str) -> Dict[str, Any]:
     """Get AI-driven strategic insights for a venue."""
-    # 1. Get live summary
-    summary = await crowd_service.get_venue_summary(venue_id)
-    if not summary:
-        raise HTTPException(status_code=404, detail="Venue data not available")
+    async with AsyncSessionLocal() as db:
+        # 1. Get live summary
+        service = CrowdService(db)
+        summary = await service.get_venue_summary(venue_id)
+        if not summary:
+            raise HTTPException(status_code=404, detail="Venue data not available")
 
-    # 2. Get Gemini insights
-    insights = await gemini_service.get_crowd_insights(summary)
-    return insights
+        # 2. Get Gemini insights
+        insights = await gemini_service.get_crowd_insights(summary.model_dump(mode="json"))
+        return insights
