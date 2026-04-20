@@ -32,5 +32,7 @@ async def get_insights(venue_id: str) -> Dict[str, Any]:
             raise HTTPException(status_code=404, detail="Venue data not available")
 
         # 2. Get Gemini insights
-        insights = await gemini_service.get_crowd_insights(summary.model_dump(mode="json"))
+        insights = await gemini_service.get_crowd_insights(
+            summary.model_dump(mode="json")
+        )
         return insights
