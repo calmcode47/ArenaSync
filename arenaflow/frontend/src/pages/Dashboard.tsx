@@ -13,6 +13,7 @@ import { useWebSocket } from '../hooks/useWebSocket';
 
 import VenueScene from '../components/three/VenueScene';
 import ZoneBadge from '../components/ui/ZoneBadge';
+import GeminiInsights from '../components/dashboard/GeminiInsights';
 
 /** HUD Stat Animation Guard */
 const AnimatedNumber = ({ value }: { value: number }) => {
@@ -448,57 +449,9 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* RIGHT: Threat Matrix */}
-                    <div className="flex-[0.4] bg-[#0a0a0f] border border-white/5 rounded-xl p-5 overflow-hidden relative shadow-[0_0_20px_rgba(0,0,0,0.5)]">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#ff3355] opacity-[0.02] blur-2xl rounded-full" />
-                        
-                        <div className="flex items-center gap-2 mb-6 border-b border-white/5 pb-3">
-                            <Shield className="w-4 h-4 text-[#ff3355]" />
-                            <h3 className="font-rajdhani font-bold text-lg text-white tracking-widest uppercase text-shadow-sm">Priority Threat Board</h3>
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-                            {sortedZones.slice(0,4).map((zone, index) => {
-                                const c = getStatusColor(zone.congestion_level);
-                                return (
-                                    <motion.div 
-                                        key={zone.zone_id}
-                                        initial={{ x: 30, opacity: 0 }}
-                                        whileInView={{ x: 0, opacity: 1 }}
-                                        transition={{ delay: index * 0.12 }}
-                                        viewport={{ once: true }}
-                                        className="flex items-center bg-[#1a1a24] border border-white/5 rounded p-3 relative overflow-hidden"
-                                    >
-                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-current opacity-20" style={{ color: c }} />
-                                        
-                                        <div className="text-[#00d4ff] font-rajdhani font-bold text-xl w-8 text-center bg-black/30 rounded mr-3 py-1">
-                                            0{index + 1}
-                                        </div>
-                                        
-                                        <div className="flex-1">
-                                            <div className="font-rajdhani font-bold uppercase text-white truncate pr-2 tracking-wide leading-none mb-1 text-sm">{zone.zone_name}</div>
-                                            <ZoneBadge level={zone.congestion_level} />
-                                        </div>
-
-                                        <div className="flex items-center gap-3 bg-black/30 pl-2 pr-1 py-1 rounded border border-white/5 ml-auto shrink-0">
-                                            <div className="text-[10px] text-gray-400 font-sans tracking-widest text-right">
-                                                VOL<br/><span className="text-white text-xs font-bold font-rajdhani">{zone.density_score.toFixed(2)}</span>
-                                            </div>
-                                            <RadialProgress percentage={Math.min(zone.density_score * 100, 100)} color={c} />
-                                        </div>
-                                    </motion.div>
-                                );
-                            })}
-                        </div>
-                        
-                        <div className={`mt-6 border border-white/10 rounded bg-[#1a1a24] p-3 text-center ${sortedZones[0]?.congestion_level === 'critical' ? 'animate-pulse border-[#ff3355]/40 text-[#ff3355]' : 'border-[#00ff88]/40 text-[#00ff88]'}`}>
-                             <div className="text-[9px] uppercase tracking-[0.2em] font-bold mb-1 w-full opacity-60">Scikit Threat Assessment</div>
-                             <div className="text-xs font-sans tracking-wide">
-                                 {sortedZones[0]?.congestion_level === 'critical' 
-                                  ? '> SEVERE FLOW BOTTLENECK DETECTED. ALLOCATING STAFF.' 
-                                  : '> LOCALIZED VECTOR FLOWS ARE NOMINAL AND SECURE.'}
-                             </div>
-                        </div>
+                    {/* RIGHT: Gemini Advisor */}
+                    <div className="flex-[0.4] min-w-[340px]">
+                        <GeminiInsights venueId={venueId} />
                     </div>
                 </div>
             </section>

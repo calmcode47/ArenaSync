@@ -349,12 +349,44 @@ export default function LiveMap() {
                             icon={createCustomIcon(CONGESTION_COLOR_MAP[zone.congestion_level] || "#00ff88")}
                         >
                             <Popup className="custom-popup">
-                                <div className="bg-[#1a1a24] text-white p-2 rounded font-sans text-xs">
-                                    <div className="font-bold border-b border-[#2a2a38] pb-1 mb-1">{zone.zone_name}</div>
-                                    <div>Ppl: {zone.current_count} / {zone.capacity}</div>
-                                    <div className="mt-1" style={{ color: CONGESTION_COLOR_MAP[zone.congestion_level] }}>
-                                        {zone.congestion_level.toUpperCase()}
+                                <div className="bg-[#1a1a24] text-white p-3 rounded-lg font-sans text-xs min-w-[200px] border border-white/10 shadow-2xl">
+                                    <div className="font-bold border-b border-[#2a2a38] pb-2 mb-2 flex justify-between items-center text-[#00d4ff] uppercase tracking-widest text-[10px]">
+                                        {zone.zone_name}
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#00ff88] animate-pulse" />
                                     </div>
+                                    
+                                    {/* Google Street View Static Preview (Virtual Patrol) */}
+                                    <div className="w-full h-24 mb-3 rounded overflow-hidden border border-white/5 bg-black/40 relative group">
+                                        <img 
+                                            src={`https://maps.googleapis.com/maps/api/streetview?size=400x200&location=${zone.latitude || mapCenter[0]},${zone.longitude || mapCenter[1]}&fov=90&heading=235&pitch=10&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`} 
+                                            alt="Virtual Patrol Preview"
+                                            className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                                        <div className="absolute bottom-2 left-2 text-[8px] font-mono text-[#00d4ff] uppercase tracking-tighter flex items-center gap-1">
+                                            <div className="w-1 h-1 rounded-full bg-[#00d4ff]" /> SENSOR_GRID_FEED: ACTIVE
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500 uppercase tracking-widest text-[8px]">Occupancy</span>
+                                            <span className="font-bold">{zone.current_count} / {zone.capacity}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-gray-500 uppercase tracking-widest text-[8px]">Status</span>
+                                            <div style={{ color: CONGESTION_COLOR_MAP[zone.congestion_level] }} className="font-bold uppercase text-[9px] tracking-widest">
+                                                {zone.congestion_level}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={() => window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${zone.latitude || mapCenter[0]},${zone.longitude || mapCenter[1]}`, '_blank')}
+                                        className="w-full mt-3 py-2 bg-[#00d4ff]/10 hover:bg-[#00d4ff]/20 border border-[#00d4ff]/30 text-[#00d4ff] text-[9px] font-bold uppercase tracking-[0.2em] rounded transition-all"
+                                    >
+                                        Initiate Virtual Patrol
+                                    </button>
                                 </div>
                             </Popup>
                         </Marker>

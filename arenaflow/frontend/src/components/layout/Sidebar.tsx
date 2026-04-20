@@ -32,11 +32,12 @@ const Sidebar = () => {
             transition={{ duration: 0.3, ease: 'circOut' }}
             style={{ overflow: 'hidden' }}
         >
-            <div className="flex flex-col gap-4 mt-6 w-full px-3">
+            <nav className="flex flex-col gap-4 mt-6 w-full px-3" aria-label="Main Navigation">
                 {routes.map((route) => (
                     <NavLink
                         key={route.path}
                         to={route.path}
+                        aria-label={`Navigate to ${route.label}`}
                         className={({ isActive }) =>
                             `flex items-center gap-4 px-3 py-3 rounded-lg transition-all relative ${
                                 isActive 
@@ -47,7 +48,7 @@ const Sidebar = () => {
                     >
                         {({ isActive }) => (
                             <>
-                                <route.icon className={`w-6 h-6 shrink-0 ${isActive ? 'drop-shadow-[0_0_5px_rgba(0,212,255,0.8)]' : ''}`} />
+                                <route.icon className={`w-6 h-6 shrink-0 ${isActive ? 'drop-shadow-[0_0_5px_rgba(0,212,255,0.8)]' : ''}`} aria-hidden="true" />
                                 <AnimatePresence>
                                     {isHovered && (
                                         <motion.span
@@ -64,12 +65,12 @@ const Sidebar = () => {
                         )}
                     </NavLink>
                 ))}
-            </div>
+            </nav>
             
             <div className="mt-auto w-full px-3">
-                <div 
-                    role="button"
+                <button 
                     onClick={handleSelectTarget}
+                    aria-label="Select Target: Switch current venue"
                     className={`p-3 rounded-lg border border-gray-800 bg-[#1a1a24]/50 flex items-center justify-center cursor-pointer hover:border-[#00d4ff]/50 transition-colors ${isHovered ? 'w-full' : 'w-12 h-12'}`}
                 >
                     <span className="font-rajdhani font-bold text-xs text-gray-400 uppercase tracking-widest whitespace-nowrap">
