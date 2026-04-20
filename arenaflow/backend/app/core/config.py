@@ -12,9 +12,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     DATABASE_URL: str
-    DATABASE_MIGRATION_URL: Optional[str] = (
-        None  # Used by Alembic only; falls back to DATABASE_URL if not set
-    )
+    DATABASE_MIGRATION_URL: Optional[
+        str
+    ] = None  # Used by Alembic only; falls back to DATABASE_URL if not set
 
     UPSTASH_REDIS_REST_URL: str
     UPSTASH_REDIS_REST_TOKEN: str
