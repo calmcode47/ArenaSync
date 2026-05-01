@@ -28,6 +28,8 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 arq = "^0.25.0"
 geopy = "^2.4.0"
 greenlet = "^3.0.0"
+google-generativeai = "^0.8.6"
+psycopg2-binary = "^2.9.12"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.287"
