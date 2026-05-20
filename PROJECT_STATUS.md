@@ -16,3 +16,7 @@
 - Cloud Run is no longer an active backend deployment target
 - Vercel is no longer an active frontend deployment target
 - Nested Firebase and GitHub workflow config under `arenaflow/` has been removed so the repo root is the only deploy/config source of truth
+
+## Status Update (20/05/2026)
+- Status verified: All deployment and application configurations are stable and correct. No changes were made to the codebase.
+
